@@ -139,8 +139,7 @@ const Analytics: React.FC = () => {
   };
 
   const calendarEvents = subscriptions.map(sub => ({
-    title: isMobile ? sub.name : `${sub.name} (${formatAmount(sub.price)})`,
-    price: formatAmount(sub.price),
+    title: sub.name,
     date: sub.next_billing,
     backgroundColor: sub.category?.name === 'Streaming' ? '#3B82F6' :
                     sub.category?.name === 'Software' ? '#EF4444' :
@@ -348,23 +347,15 @@ const Analytics: React.FC = () => {
                       }
                     }}
                     eventContent={(arg) => {
-                      const event = arg.event;
                       return (
                         <div 
                           className={`
-                            p-1.5 rounded-md w-full
-                            ${isMobile ? 'text-[11px] leading-tight' : 'text-sm'} 
-                            text-white font-medium
+                            p-2 rounded-md w-full
+                            ${isMobile ? 'text-xs' : 'text-sm'} 
+                            text-white font-semibold
                           `}
                         >
-                          <div className="flex flex-col">
-                            <span className="truncate font-semibold">{event.title}</span>
-                            {isMobile && (
-                              <span className="text-[10px] opacity-90 truncate">
-                                {event._def.extendedProps.price}
-                              </span>
-                            )}
-                          </div>
+                          <span className="truncate block">{arg.event.title}</span>
                         </div>
                       )
                     }}

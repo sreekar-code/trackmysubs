@@ -466,7 +466,7 @@ const Analytics: React.FC = () => {
 
           {activeView === 'timeline' && (
             <div>
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Upcoming Renewals</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Timeline</h3>
               <div className="space-y-3 sm:space-y-4">
                 {timelineEvents.map((event, index) => (
                   <div

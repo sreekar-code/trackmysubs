@@ -19,6 +19,41 @@ interface SubscriptionFormData {
   currency: string;
 }
 
+interface Database {
+  public: {
+    Tables: {
+      subscriptions: {
+        Insert: {
+          name: string;
+          price: number;
+          billing_cycle: string;
+          start_date: string;
+          next_billing: string;
+          category_id: string | null;
+          currency: string;
+          user_id: string;
+        };
+        Update: {
+          name?: string;
+          price?: number;
+          billing_cycle?: string;
+          start_date?: string;
+          next_billing?: string;
+          category_id?: string | null;
+          currency?: string;
+        };
+      };
+      subscription_categories: {
+        Insert: {
+          name: string;
+          user_id: string;
+          is_default: boolean;
+        };
+      };
+    };
+  };
+}
+
 interface SubscriptionModalProps {
   showModal: boolean;
   setShowModal: (show: boolean) => void;
@@ -104,13 +139,15 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      const categoryData: Database['public']['Tables']['subscription_categories']['Insert'] = {
+        name: newCategoryName.trim(),
+        user_id: user.id,
+        is_default: false
+      };
+
       const { data: newCategory, error } = await supabase
         .from('subscription_categories')
-        .insert({
-          name: newCategoryName.trim(),
-          user_id: user.id,
-          is_default: false
-        })
+        .insert(categoryData)
         .select()
         .single();
 
@@ -125,6 +162,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         setNewCategoryName('');
       }
     } catch (err) {
+      console.error('Error creating category:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to create category');
     }
   };
@@ -140,18 +178,28 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         throw new Error('User not authenticated');
       }
 
-      const subscriptionData = {
-        name: subscriptionForm.name,
-        price: parseFloat(subscriptionForm.price),
+      // Validate required fields
+      if (!subscriptionForm.name || !subscriptionForm.price || !subscriptionForm.start_date) {
+        setModalError('Please fill in all required fields');
+        return;
+      }
+
+      const price = parseFloat(subscriptionForm.price);
+      if (isNaN(price) || price < 0) {
+        setModalError('Please enter a valid price');
+        return;
+      }
+
+      const subscriptionData: Database['public']['Tables']['subscriptions']['Insert'] = {
+        name: subscriptionForm.name.trim(),
+        price: price,
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
-        next_billing: subscriptionForm.next_billing,
+        next_billing: subscriptionForm.next_billing || calculateEndDate(subscriptionForm.start_date, subscriptionForm.billing_cycle),
         category_id: subscriptionForm.category_id || null,
         currency: subscriptionForm.currency || 'USD',
         user_id: user.id
       };
-
-      let error;
 
       if (editingSubscription) {
         const { error: updateError } = await supabase
@@ -164,18 +212,17 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             next_billing: subscriptionData.next_billing,
             category_id: subscriptionData.category_id,
             currency: subscriptionData.currency
-          })
-          .eq('id', editingSubscription)
-          .eq('user_id', user.id);
-        error = updateError;
+          } as Database['public']['Tables']['subscriptions']['Update'])
+          .eq('id', editingSubscription);
+
+        if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
           .from('subscriptions')
           .insert([subscriptionData]);
-        error = insertError;
-      }
 
-      if (error) throw error;
+        if (insertError) throw insertError;
+      }
 
       await fetchSubscriptions();
       setShowModal(false);
@@ -190,6 +237,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         currency: 'USD'
       });
     } catch (err) {
+      console.error('Error saving subscription:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to save subscription');
     }
   };

@@ -65,11 +65,6 @@ const Dashboard: React.FC = () => {
     currency: 'USD'
   });
 
-  const totalMonthlySpend = subscriptions.reduce(
-    (acc, sub) => acc + calculateMonthlyPrice(sub.price, sub.billing_cycle),
-    0
-  );
-
   const fetchData = async (retryCount = 0) => {
     console.log('🔄 Fetching data...');
     try {
@@ -315,10 +310,7 @@ const Dashboard: React.FC = () => {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <DashboardStats
-          totalMonthlySpend={totalMonthlySpend}
-          subscriptionCount={subscriptions.length}
-        />
+        <DashboardStats subscriptions={subscriptions} />
 
         <div className="mt-4 sm:mt-8">
           <SubscriptionFilters

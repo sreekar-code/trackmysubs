@@ -20,6 +20,7 @@ import {
 } from 'chart.js';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import { EventContentArg } from '@fullcalendar/core';
 import DashboardHeader from './dashboard/DashboardHeader';
 
 ChartJS.register(
@@ -209,6 +210,49 @@ const Analytics: React.FC = () => {
     }
   };
 
+  const renderEventContent = (eventInfo: EventContentArg) => {
+    return (
+      <div 
+        className={`
+          p-2 rounded-md w-full
+          ${isMobile ? 'text-xs' : 'text-sm'} 
+          font-medium cursor-pointer hover:bg-gray-200 transition-colors
+        `}
+        onClick={(e) => {
+          e.stopPropagation();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const calendarEl = document.querySelector('.fc-view-harness');
+          if (!calendarEl) return;
+          
+          const calendarRect = calendarEl.getBoundingClientRect();
+          const spaceAbove = rect.top - calendarRect.top;
+          const spaceBelow = calendarRect.bottom - rect.bottom;
+          const showAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
+          
+          let left = rect.left;
+          const popupWidth = 320;
+          
+          // Keep popup within calendar boundaries
+          if (left + popupWidth > calendarRect.right) {
+            left = calendarRect.right - popupWidth - 10;
+          }
+          if (left < calendarRect.left) {
+            left = calendarRect.left + 10;
+          }
+          
+          setPopupPosition({
+            top: showAbove ? rect.top - 10 : rect.bottom + 10,
+            left: left,
+            showAbove
+          });
+          setSelectedSubscription(eventInfo.event.extendedProps.subscription);
+        }}
+      >
+        {eventInfo.event.title}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -391,20 +435,20 @@ const Analytics: React.FC = () => {
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">Subscription Calendar</h3>
               <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow-sm relative">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
-                <FullCalendar
-                  plugins={[dayGridPlugin]}
-                  initialView="dayGridMonth"
-                  events={calendarEvents}
-                  height="auto"
-                  headerToolbar={{
+                  <FullCalendar
+                    plugins={[dayGridPlugin]}
+                    initialView="dayGridMonth"
+                    events={calendarEvents}
+                    height="auto"
+                    headerToolbar={{
                       left: 'prev,next',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                  }}
-                  dayMaxEvents={isMobile ? 2 : true}
+                      center: 'title',
+                      right: 'dayGridMonth'
+                    }}
+                    dayMaxEvents={isMobile ? 2 : true}
                     eventDisplay="block"
-                  views={{
-                    dayGridMonth: {
+                    views={{
+                      dayGridMonth: {
                         titleFormat: { 
                           year: 'numeric', 
                           month: isMobile ? 'short' : 'long'
@@ -416,41 +460,7 @@ const Analytics: React.FC = () => {
                         eventShortHeight: isMobile ? 30 : 40,
                       }
                     }}
-                    eventContent={(arg) => {
-                      return (
-                        <div 
-                          className={`
-                            p-2 rounded-md w-full
-                            ${isMobile ? 'text-xs' : 'text-sm'} 
-                            font-medium cursor-pointer hover:bg-gray-200 transition-colors
-                          `}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const viewportHeight = window.innerHeight;
-                            const viewportWidth = window.innerWidth;
-                            
-                            const spaceAbove = rect.top;
-                            const spaceBelow = viewportHeight - rect.bottom;
-                            const showAbove = spaceAbove > spaceBelow;
-                            
-                            let left = rect.left;
-                            if (left + 280 > viewportWidth) {
-                              left = viewportWidth - 290;
-                            }
-                            
-                            setPopupPosition({
-                              top: showAbove ? rect.top + window.scrollY : rect.bottom + window.scrollY,
-                              left: Math.max(10, left + window.scrollX),
-                              showAbove
-                            });
-                            setSelectedSubscription(arg.event.extendedProps.subscription);
-                          }}
-                        >
-                          <span className="truncate block">{arg.event.title}</span>
-                        </div>
-                      )
-                    }}
+                    eventContent={renderEventContent}
                     dayHeaderClassNames="text-gray-600 font-medium py-2"
                     dayCellClassNames="text-gray-700 hover:bg-gray-50"
                     eventClassNames="shadow-sm hover:shadow transition-shadow"
@@ -469,14 +479,14 @@ const Analytics: React.FC = () => {
                     />
                     <div
                       className={`
-                        fixed z-50 bg-white/95 rounded-lg shadow-lg
+                        absolute z-50 bg-white/95 rounded-lg shadow-lg
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
                       `}
                       style={{
-                        top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
-                        bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
+                        top: popupPosition.showAbove ? `${popupPosition.top}px` : 'auto',
+                        bottom: popupPosition.showAbove ? 'auto' : `calc(100% - ${popupPosition.top}px)`,
                         left: `${popupPosition.left}px`,
-                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
+                        transform: 'none',
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}
                     >

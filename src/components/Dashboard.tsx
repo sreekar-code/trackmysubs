@@ -90,6 +90,7 @@ const Dashboard: React.FC = () => {
         supabase
           .from('subscription_categories')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: true })
       ]);
 
@@ -143,7 +144,8 @@ const Dashboard: React.FC = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subscription_categories'
+          table: 'subscription_categories',
+          filter: `user_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
         },
         async (payload) => {
           console.log('📦 Category change received:', payload);

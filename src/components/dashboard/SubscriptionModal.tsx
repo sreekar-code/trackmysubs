@@ -47,6 +47,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   // Get the current currency symbol based on the selected currency
   const currencySymbol = currencies[subscriptionForm.currency as keyof typeof currencies]?.symbol || '$';
+  const currency = currencies[subscriptionForm.currency as keyof typeof currencies]?.name || 'USD';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -233,7 +234,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price & Currency
+              Price
             </label>
             <div className="relative rounded-lg shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -249,21 +250,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 placeholder="0.00"
                 value={subscriptionForm.price}
                 onChange={handleInputChange}
-                className="block w-full pl-7 pr-28 border border-gray-300 rounded-lg shadow-sm py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
+                className="block w-full pl-7 pr-12 border border-gray-300 rounded-lg shadow-sm py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
               />
-              <div className="absolute inset-y-0 right-0 flex items-center">
-                <select
-                  name="currency"
-                  value={subscriptionForm.currency || 'USD'}
-                  onChange={handleInputChange}
-                  className="h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  {Object.entries(currencies).map(([code, { name }]) => (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  ))}
-                </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <span className="text-gray-500 sm:text-sm">{currency}</span>
               </div>
             </div>
           </div>

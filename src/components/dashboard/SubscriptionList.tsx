@@ -11,6 +11,7 @@ interface Subscription {
   start_date: string;
   next_billing: string;
   category_id: string | null;
+  currency: string;
   category?: {
     name: string;
   };
@@ -64,6 +65,13 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
     return diffDays <= 7 && diffDays >= 0;
   };
 
+  const formatSubscriptionAmount = (amount: number, currency: string): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD'
+    }).format(amount);
+  };
+
   const filteredSubscriptions = subscriptions.filter((subscription) => {
     const matchesCategory = !selectedCategory || subscription.category_id === selectedCategory;
     const matchesBillingCycle = !selectedBillingCycle || subscription.billing_cycle === selectedBillingCycle;
@@ -108,10 +116,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 <h3 className="font-medium text-gray-900">{subscription.name}</h3>
                 <div className="mt-1 space-y-1 text-sm">
                   <p className="font-medium text-gray-900">
-                    {formatAmount(subscription.price)}
+                    {formatSubscriptionAmount(subscription.price, subscription.currency)}
                     {subscription.billing_cycle !== 'Monthly' && (
                       <span className="ml-1 text-xs text-gray-500">
-                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
+                        ({formatSubscriptionAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle), subscription.currency)}/mo)
                       </span>
                     )}
                   </p>
@@ -207,10 +215,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {formatAmount(subscription.price)}
+                    {formatSubscriptionAmount(subscription.price, subscription.currency)}
                     {subscription.billing_cycle !== 'Monthly' && (
                       <span className="ml-1 text-xs text-gray-500">
-                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
+                        ({formatSubscriptionAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle), subscription.currency)}/mo)
                       </span>
                     )}
                   </div>

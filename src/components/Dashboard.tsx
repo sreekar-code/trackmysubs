@@ -18,6 +18,7 @@ interface Subscription {
   start_date: string;
   next_billing: string;
   category_id: string | null;
+  currency: string;
   category?: {
     name: string;
   };
@@ -60,7 +61,8 @@ const Dashboard: React.FC = () => {
     billing_cycle: 'Monthly',
     start_date: '',
     next_billing: '',
-    category_id: ''
+    category_id: '',
+    currency: 'USD'
   });
 
   const totalMonthlySpend = subscriptions.reduce(
@@ -118,6 +120,7 @@ const Dashboard: React.FC = () => {
         start_date: subscription.start_date,
         next_billing: subscription.next_billing,
         category_id: subscription.category_id,
+        currency: subscription.currency,
         category: subscription.category
       })) || []);
       
@@ -232,7 +235,8 @@ const Dashboard: React.FC = () => {
       billing_cycle: subscription.billing_cycle,
       start_date: subscription.start_date,
       next_billing: subscription.next_billing,
-      category_id: subscription.category_id || ''
+      category_id: subscription.category_id || '',
+      currency: subscription.currency || 'USD'
     });
     setShowModal(true);
   };
@@ -299,7 +303,8 @@ const Dashboard: React.FC = () => {
             billing_cycle: 'Monthly',
             start_date: '',
             next_billing: '',
-            category_id: ''
+            category_id: '',
+            currency: 'USD'
           });
           setShowModal(true);
         }}
@@ -357,7 +362,8 @@ const Dashboard: React.FC = () => {
                       billing_cycle: 'Monthly',
                       start_date: '',
                       next_billing: '',
-                      category_id: ''
+                      category_id: '',
+                      currency: 'USD'
                     });
                     setShowModal(true);
                   }}

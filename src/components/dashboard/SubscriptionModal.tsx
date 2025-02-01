@@ -16,6 +16,7 @@ interface SubscriptionFormData {
   start_date: string;
   next_billing: string;
   category_id: string;
+  currency: string;
 }
 
 interface SubscriptionModalProps {
@@ -137,7 +138,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
         next_billing: subscriptionForm.next_billing,
-        category_id: subscriptionForm.category_id || null
+        category_id: subscriptionForm.category_id || null,
+        currency: subscriptionForm.currency || 'USD'
       };
 
       let error;
@@ -161,7 +163,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         billing_cycle: 'Monthly',
         start_date: '',
         next_billing: '',
-        category_id: ''
+        category_id: '',
+        currency: 'USD'
       });
       setShowModal(false);
       setEditingSubscription(null);
@@ -241,6 +244,20 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 onChange={handleInputChange}
                 className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
+              <div className="absolute inset-y-0 right-0 flex items-center">
+                <select
+                  name="currency"
+                  value={subscriptionForm.currency || 'USD'}
+                  onChange={handleInputChange}
+                  className="focus:ring-blue-500 focus:border-blue-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md"
+                >
+                  {Object.entries(currencies).map(([code, { name }]) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

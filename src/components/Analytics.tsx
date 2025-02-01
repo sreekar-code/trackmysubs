@@ -39,6 +39,7 @@ interface Subscription {
   price: number;
   billing_cycle: string;
   next_billing: string;
+  currency: string;
   category?: {
     name: string;
   };
@@ -67,6 +68,13 @@ const Analytics: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const formatSubscriptionAmount = (amount: number, currency: string): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD'
+    }).format(amount);
+  };
+
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
@@ -84,6 +92,7 @@ const Analytics: React.FC = () => {
           price: subscription.price,
           billing_cycle: subscription.billing_cycle,
           next_billing: subscription.next_billing,
+          currency: subscription.currency || 'USD',
           category: subscription.category
         })) || []);
       } catch (err) {
@@ -434,7 +443,7 @@ const Analytics: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <span className="text-gray-500">Price</span>
                             <span className="font-medium text-gray-900">
-                              {formatAmount(selectedSubscription.price)}
+                              {formatSubscriptionAmount(selectedSubscription.price, selectedSubscription.currency)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center">

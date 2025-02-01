@@ -133,7 +133,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }
 
       const subscriptionData = {
-        name: subscriptionForm.name,
+        name: subscriptionForm.name.trim(),
         price: parseFloat(subscriptionForm.price),
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
@@ -145,14 +145,16 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       let error;
 
       if (editingSubscription) {
-        ({ error } = await supabase
+        const { error: updateError } = await supabase
           .from('subscriptions')
           .update(subscriptionData)
-          .eq('id', editingSubscription));
+          .match({ id: editingSubscription });
+        error = updateError;
       } else {
-        ({ error } = await supabase
+        const { error: insertError } = await supabase
           .from('subscriptions')
-          .insert([{ ...subscriptionData, user_id: user.id }]));
+          .insert([{ ...subscriptionData, user_id: user.id }]);
+        error = insertError;
       }
 
       if (error) throw error;
@@ -171,6 +173,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
       await fetchSubscriptions();
     } catch (err) {
+      console.error('Error saving subscription:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to save subscription');
     }
   };

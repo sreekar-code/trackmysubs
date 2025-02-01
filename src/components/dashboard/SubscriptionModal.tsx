@@ -43,8 +43,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [modalError, setModalError] = useState<string | null>(null);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const { currency } = useCurrency();
-  const currencySymbol = currencies[currency as keyof typeof currencies].symbol;
+  const { currencies } = useCurrency();
+
+  // Get the current currency symbol based on the selected currency
+  const currencySymbol = currencies[subscriptionForm.currency as keyof typeof currencies]?.symbol || '$';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

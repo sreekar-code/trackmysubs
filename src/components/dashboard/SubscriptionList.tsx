@@ -70,11 +70,18 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
     const matchesSearch = !searchQuery || 
       subscription.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (subscription.category?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRenewingSoon = !showRenewingSoon || isExpiringSoon(subscription.next_billing);
-    const matchesExpired = !showExpired || isExpired(subscription.next_billing);
 
-    return matchesCategory && matchesBillingCycle && matchesSearch && 
-           ((!showRenewingSoon && !showExpired) || matchesRenewingSoon || matchesExpired);
+    // Status filters
+    let matchesStatus = true;
+    if (showRenewingSoon && !showExpired) {
+      matchesStatus = isExpiringSoon(subscription.next_billing);
+    } else if (showExpired && !showRenewingSoon) {
+      matchesStatus = isExpired(subscription.next_billing);
+    } else if (showExpired && showRenewingSoon) {
+      matchesStatus = isExpired(subscription.next_billing) || isExpiringSoon(subscription.next_billing);
+    }
+
+    return matchesCategory && matchesBillingCycle && matchesSearch && matchesStatus;
   });
 
   if (filteredSubscriptions.length === 0) {

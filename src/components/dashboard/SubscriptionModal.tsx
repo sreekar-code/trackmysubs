@@ -16,49 +16,13 @@ interface SubscriptionFormData {
   start_date: string;
   next_billing: string;
   category_id: string;
-  currency: string;
-}
-
-interface Database {
-  public: {
-    Tables: {
-      subscriptions: {
-        Insert: {
-          name: string;
-          price: number;
-          billing_cycle: string;
-          start_date: string;
-          next_billing: string;
-          category_id: string | null;
-          currency: string;
-          user_id: string;
-        };
-        Update: {
-          name?: string;
-          price?: number;
-          billing_cycle?: string;
-          start_date?: string;
-          next_billing?: string;
-          category_id?: string | null;
-          currency?: string;
-        };
-      };
-      subscription_categories: {
-        Insert: {
-          name: string;
-          user_id: string;
-          is_default: boolean;
-        };
-      };
-    };
-  };
 }
 
 interface SubscriptionModalProps {
   showModal: boolean;
   setShowModal: (show: boolean) => void;
   subscriptionForm: SubscriptionFormData;
-  setSubscriptionForm: React.Dispatch<React.SetStateAction<SubscriptionFormData>>;
+  setSubscriptionForm: (form: SubscriptionFormData) => void;
   editingSubscription: string | null;
   setEditingSubscription: (id: string | null) => void;
   categories: Category[];
@@ -78,38 +42,27 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [modalError, setModalError] = useState<string | null>(null);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const { currency: displayCurrency } = useCurrency();
-  const currencySymbol = currencies[displayCurrency as keyof typeof currencies].symbol;
-
-  // Add supported currencies
-  const supportedCurrencies = {
-    USD: { symbol: '$', name: 'US Dollar' },
-    EUR: { symbol: '€', name: 'Euro' },
-    GBP: { symbol: '£', name: 'British Pound' },
-    INR: { symbol: '₹', name: 'Indian Rupee' },
-    JPY: { symbol: '¥', name: 'Japanese Yen' },
-    AUD: { symbol: 'A$', name: 'Australian Dollar' },
-    CAD: { symbol: 'C$', name: 'Canadian Dollar' },
-  };
+  const { currency } = useCurrency();
+  const currencySymbol = currencies[currency as keyof typeof currencies].symbol;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    setSubscriptionForm(prev => {
-      const updates: Partial<SubscriptionFormData> = { [name]: value };
+    const updates: any = { [name]: value };
+    if (name === 'start_date' || name === 'billing_cycle') {
+      const startDate = name === 'start_date' ? value : subscriptionForm.start_date;
+      const cycle = name === 'billing_cycle' ? value : subscriptionForm.billing_cycle;
       
-      if (name === 'start_date' || name === 'billing_cycle') {
-        const startDate = name === 'start_date' ? value : prev.start_date;
-        const cycle = name === 'billing_cycle' ? value : prev.billing_cycle;
-        
-        if (startDate) {
-          const endDate = calculateEndDate(startDate, cycle);
-          updates.next_billing = endDate;
-        }
+      if (startDate) {
+        const endDate = calculateEndDate(startDate, cycle);
+        updates.next_billing = endDate;
       }
+    }
 
-      return { ...prev, ...updates };
-    });
+    setSubscriptionForm(prev => ({
+      ...prev,
+      ...updates
+    }));
   };
 
   const calculateEndDate = (startDate: string, billingCycle: string): string => {
@@ -133,34 +86,34 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    if (!newCategoryName.trim()) {
+      setModalError('Category name cannot be empty');
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
 
-      const categoryData: Database['public']['Tables']['subscription_categories']['Insert'] = {
-        name: newCategoryName.trim(),
-        user_id: user.id,
-        is_default: false
-      };
-
-      const { data: newCategory, error } = await supabase
+      const { data, error } = await supabase
         .from('subscription_categories')
-        .insert(categoryData)
+        .insert([{
+          name: newCategoryName.trim(),
+          user_id: user.id,
+          is_default: false
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-      if (newCategory) {
-        setSubscriptionForm(prev => ({
-          ...prev,
-          category_id: newCategory.id
-        }));
-        setShowNewCategoryInput(false);
-        setNewCategoryName('');
-      }
+      setSubscriptionForm(prev => ({ ...prev, category_id: data.id }));
+      setNewCategoryName('');
+      setShowNewCategoryInput(false);
+      setModalError(null);
     } catch (err) {
       console.error('Error creating category:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to create category');
@@ -178,66 +131,43 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         throw new Error('User not authenticated');
       }
 
-      // Validate required fields
-      if (!subscriptionForm.name || !subscriptionForm.price || !subscriptionForm.start_date) {
-        setModalError('Please fill in all required fields');
-        return;
-      }
-
-      const price = parseFloat(subscriptionForm.price);
-      if (isNaN(price) || price < 0) {
-        setModalError('Please enter a valid price');
-        return;
-      }
-
-      const subscriptionData: Database['public']['Tables']['subscriptions']['Insert'] = {
-        name: subscriptionForm.name.trim(),
-        price: price,
+      const subscriptionData = {
+        name: subscriptionForm.name,
+        price: parseFloat(subscriptionForm.price),
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
-        next_billing: subscriptionForm.next_billing || calculateEndDate(subscriptionForm.start_date, subscriptionForm.billing_cycle),
-        category_id: subscriptionForm.category_id || null,
-        currency: subscriptionForm.currency || 'USD',
-        user_id: user.id
+        next_billing: subscriptionForm.next_billing,
+        category_id: subscriptionForm.category_id || null
       };
 
+      let error;
+
       if (editingSubscription) {
-        const { error: updateError } = await supabase
+        ({ error } = await supabase
           .from('subscriptions')
-          .update({
-            name: subscriptionData.name,
-            price: subscriptionData.price,
-            billing_cycle: subscriptionData.billing_cycle,
-            start_date: subscriptionData.start_date,
-            next_billing: subscriptionData.next_billing,
-            category_id: subscriptionData.category_id,
-            currency: subscriptionData.currency
-          } as Database['public']['Tables']['subscriptions']['Update'])
-          .eq('id', editingSubscription);
-
-        if (updateError) throw updateError;
+          .update(subscriptionData)
+          .eq('id', editingSubscription));
       } else {
-        const { error: insertError } = await supabase
+        ({ error } = await supabase
           .from('subscriptions')
-          .insert([subscriptionData]);
-
-        if (insertError) throw insertError;
+          .insert([{ ...subscriptionData, user_id: user.id }]));
       }
 
-      await fetchSubscriptions();
-      setShowModal(false);
-      setEditingSubscription(null);
+      if (error) throw error;
+
       setSubscriptionForm({
         name: '',
         price: '',
         billing_cycle: 'Monthly',
         start_date: '',
         next_billing: '',
-        category_id: '',
-        currency: 'USD'
+        category_id: ''
       });
+      setShowModal(false);
+      setEditingSubscription(null);
+
+      await fetchSubscriptions();
     } catch (err) {
-      console.error('Error saving subscription:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to save subscription');
     }
   };
@@ -276,10 +206,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Service Name */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Service Name
             </label>
             <input
@@ -287,56 +216,36 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               name="name"
               id="name"
               required
-              placeholder="e.g., Netflix, Spotify"
               value={subscriptionForm.name}
               onChange={handleInputChange}
-              className="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
 
-          {/* Price and Currency */}
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price and Currency
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+              Price
             </label>
-            <div className="flex rounded-md shadow-sm">
-              <div className="relative flex-grow">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">
-                    {supportedCurrencies[subscriptionForm.currency || 'USD'].symbol}
-                  </span>
-                </div>
-                <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={subscriptionForm.price}
-                  onChange={handleInputChange}
-                  className="block w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">{currencySymbol}</span>
               </div>
-              <select
-                name="currency"
-                value={subscriptionForm.currency || 'USD'}
+              <input
+                type="number"
+                name="price"
+                id="price"
+                required
+                min="0"
+                step="0.01"
+                value={subscriptionForm.price}
                 onChange={handleInputChange}
-                className="relative inline-flex items-center px-4 py-2.5 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {Object.entries(supportedCurrencies).map(([code, { name }]) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
+                className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
           </div>
 
-          {/* Billing Cycle */}
           <div>
-            <label htmlFor="billing_cycle" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="billing_cycle" className="block text-sm font-medium text-gray-700">
               Billing Cycle
             </label>
             <select
@@ -345,17 +254,16 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               required
               value={subscriptionForm.billing_cycle}
               onChange={handleInputChange}
-              className="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               <option value="Monthly">Monthly</option>
-              <option value="Quarterly">Quarterly (Every 3 months)</option>
+              <option value="Quarterly">Quarterly</option>
               <option value="Yearly">Yearly</option>
             </select>
           </div>
 
-          {/* Start Date */}
           <div>
-            <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="start_date" className="block text-sm font-medium text-gray-700">
               Start Date
             </label>
             <input
@@ -365,92 +273,59 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               required
               value={subscriptionForm.start_date}
               onChange={handleInputChange}
-              className="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
 
-          {/* Category */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
               Category
             </label>
             {showNewCategoryInput ? (
-              <div className="flex rounded-md shadow-sm">
+              <div className="mt-1 flex rounded-md shadow-sm">
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter category name"
-                  className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-l-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <div className="flex">
-                  <button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowNewCategoryInput(false);
-                      setNewCategoryName('');
-                    }}
-                    className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateCategory}
+                  className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Add
+                </button>
               </div>
             ) : (
-              <div className="flex rounded-md shadow-sm">
+              <div className="mt-1 flex rounded-md shadow-sm">
                 <select
                   id="category"
                   name="category_id"
                   value={subscriptionForm.category_id}
                   onChange={handleInputChange}
-                  className="flex-1 block w-full rounded-l-md border border-gray-300 py-2.5 px-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 block w-full rounded-none rounded-l-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Select a category</option>
-                  {/* Default Categories */}
-                  <optgroup label="Default Categories">
-                    {sortedCategories
-                      .filter(category => category.is_default)
-                      .map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                  {/* User Categories */}
-                  <optgroup label="Your Categories">
-                    {sortedCategories
-                      .filter(category => !category.is_default)
-                      .map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                  </optgroup>
+                  {sortedCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryInput(true)}
-                  className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <Tag className="h-4 w-4 mr-1" />
                   New
                 </button>
               </div>
             )}
-            <p className="mt-1 text-sm text-gray-500">
-              Choose a category or create a new one to organize your subscriptions
-            </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-2">
+          <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={() => {
@@ -460,13 +335,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 setNewCategoryName('');
                 setEditingSubscription(null);
               }}
-              className="px-4 py-2.5 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {editingSubscription ? 'Save Changes' : 'Add Subscription'}
             </button>

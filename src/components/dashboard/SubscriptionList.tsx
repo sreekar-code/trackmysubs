@@ -11,7 +11,6 @@ interface Subscription {
   start_date: string;
   next_billing: string;
   category_id: string | null;
-  currency: string;
   category?: {
     name: string;
   };
@@ -28,17 +27,6 @@ interface SubscriptionListProps {
   showExpired: boolean;
 }
 
-// Add supported currencies
-const supportedCurrencies: { [key: string]: { symbol: string; name: string } } = {
-  USD: { symbol: '$', name: 'US Dollar' },
-  EUR: { symbol: '€', name: 'Euro' },
-  GBP: { symbol: '£', name: 'British Pound' },
-  INR: { symbol: '₹', name: 'Indian Rupee' },
-  JPY: { symbol: '¥', name: 'Japanese Yen' },
-  AUD: { symbol: 'A$', name: 'Australian Dollar' },
-  CAD: { symbol: 'C$', name: 'Canadian Dollar' },
-};
-
 const SubscriptionList: React.FC<SubscriptionListProps> = ({
   subscriptions,
   handleEdit,
@@ -49,12 +37,7 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
   showRenewingSoon,
   showExpired,
 }) => {
-  const { formatAmount, currency: displayCurrency } = useCurrency();
-
-  const formatOriginalAmount = (amount: number, currency: string) => {
-    const symbol = supportedCurrencies[currency]?.symbol || '$';
-    return `${symbol}${amount.toFixed(2)}`;
-  };
+  const { formatAmount } = useCurrency();
 
   const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
     switch (billingCycle) {
@@ -125,13 +108,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 <h3 className="font-medium text-gray-900">{subscription.name}</h3>
                 <div className="mt-1 space-y-1 text-sm">
                   <p className="font-medium text-gray-900">
-                    {formatOriginalAmount(subscription.price, subscription.currency || 'USD')}
+                    {formatAmount(subscription.price)}
                     {subscription.billing_cycle !== 'Monthly' && (
                       <span className="ml-1 text-xs text-gray-500">
-                        ({formatOriginalAmount(
-                          calculateMonthlyPrice(subscription.price, subscription.billing_cycle),
-                          subscription.currency || 'USD'
-                        )}/mo)
+                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
                       </span>
                     )}
                   </p>
@@ -227,13 +207,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {formatOriginalAmount(subscription.price, subscription.currency || 'USD')}
+                    {formatAmount(subscription.price)}
                     {subscription.billing_cycle !== 'Monthly' && (
                       <span className="ml-1 text-xs text-gray-500">
-                        ({formatOriginalAmount(
-                          calculateMonthlyPrice(subscription.price, subscription.billing_cycle),
-                          subscription.currency || 'USD'
-                        )}/mo)
+                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
                       </span>
                     )}
                   </div>

@@ -320,7 +320,7 @@ const Analytics: React.FC = () => {
           {activeView === 'calendar' && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Calendar</h3>
-              <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto">
+              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
                     plugins={[dayGridPlugin, timeGridPlugin]}
@@ -373,7 +373,7 @@ const Analytics: React.FC = () => {
                     }}
                     eventContent={(arg) => {
                       return (
-                        <div className={`p-1 ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>
+                        <div className={`p-1 ${isMobile ? 'text-xs' : 'text-sm'} truncate text-gray-700`}>
                           {arg.event.title}
                         </div>
                       )

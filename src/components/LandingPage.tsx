@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditCard, Clock, DollarSign, Zap, Tag, Globe } from 'lucide-react';
+import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -56,27 +56,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <Feature
                   icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Quick Overview"
-                  description="See all your subscriptions at a glance."
+                  description="Simple dashboard to manage all your subscriptions in one place."
                 />
                 <Feature
                   icon={<Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Track Renewals"
-                  description="See when your subscriptions are due for renewal."
+                  title="Renewal Tracking"
+                  description="Visual indicators to help you spot upcoming and overdue renewals."
                 />
                 <Feature
                   icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Monthly Spend"
-                  description="Know exactly how much you spend monthly."
+                  description="Real-time calculation of your total monthly subscription costs."
                 />
                 <Feature
                   icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Custom Categories"
-                  description="Organize subscriptions your way."
+                  description="Create and manage your own categories to organize subscriptions better."
                 />
                 <Feature
                   icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Multi-Currency"
-                  description="Track expenses in your preferred currency."
+                  description="Support for multiple currencies with automatic conversion to your preferred currency."
+                />
+                <Feature
+                  icon={<BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Smart Analytics"
+                  description="Visualize your spending patterns with interactive charts and calendar view."
                 />
               </div>
             </div>

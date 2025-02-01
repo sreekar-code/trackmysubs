@@ -284,7 +284,7 @@ const Analytics: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <div>
+              <div>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <h3 className="text-base sm:text-lg font-semibold">Monthly Spend by Category</h3>
@@ -301,86 +301,86 @@ const Analytics: React.FC = () => {
                         </select>
                       </div>
                     </div>
-                    <div className="h-[300px] sm:h-[400px]">
-                      <Bar
-                        data={monthlySpendData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: isMobile ? 'bottom' : 'top',
-                              labels: {
-                                boxWidth: isMobile ? 12 : 40,
-                                padding: isMobile ? 10 : 20,
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: function(context) {
-                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
-                                }
-                              }
-                            }
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              ticks: {
-                                callback: function(value) {
-                                  return formatAmount(value as number);
-                                },
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            x: {
-                              ticks: {
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
+                <div className="h-[300px] sm:h-[400px]">
+                  <Bar
+                    data={monthlySpendData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: isMobile ? 'bottom' : 'top',
+                          labels: {
+                            boxWidth: isMobile ? 12 : 40,
+                            padding: isMobile ? 10 : 20,
+                            font: {
+                              size: isMobile ? 10 : 12
                             }
                           }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
-                    <div className="h-[300px] sm:h-[400px]">
-                      <Pie
-                        data={monthlySpendData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: isMobile ? 'bottom' : 'top',
-                              labels: {
-                                boxWidth: isMobile ? 12 : 40,
-                                padding: isMobile ? 10 : 20,
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: function(context) {
-                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
-                                }
-                              }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.label}: ${formatAmount(context.raw as number)}`;
                             }
                           }
-                        }}
-                      />
-                    </div>
-                  </div>
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          ticks: {
+                            callback: function(value) {
+                              return formatAmount(value as number);
+                            },
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        },
+                        x: {
+                          ticks: {
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
+                <div className="h-[300px] sm:h-[400px]">
+                  <Pie
+                    data={monthlySpendData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: isMobile ? 'bottom' : 'top',
+                          labels: {
+                            boxWidth: isMobile ? 12 : 40,
+                            padding: isMobile ? 10 : 20,
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.label}: ${formatAmount(context.raw as number)}`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
                 </>
               )}
             </div>

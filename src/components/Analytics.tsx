@@ -134,7 +134,7 @@ const Analytics: React.FC = () => {
       const categoryTotals: { [key: string]: number } = {};
       
       for (const sub of subscriptions) {
-        const category = sub.category?.name || 'Uncategorized';
+    const category = sub.category?.name || 'Uncategorized';
         const monthlyPrice = await calculateMonthlyPrice(
           sub.price,
           sub.billing_cycle,
@@ -207,6 +207,54 @@ const Analytics: React.FC = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const calculatePopupPosition = (rect: DOMRect): { top: number; left: number; showAbove: boolean } => {
+    const POPUP_WIDTH = 320;
+    const POPUP_HEIGHT = 200; // Approximate height of popup
+    const MARGIN = 10; // Margin from edges
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+
+    // Calculate available space in different directions
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceLeft = rect.left;
+    const spaceRight = viewportWidth - rect.right;
+
+    // Determine vertical position
+    let showAbove = spaceBelow < POPUP_HEIGHT && spaceAbove > spaceBelow;
+    let top = showAbove ? rect.top + scrollY - MARGIN : rect.bottom + scrollY + MARGIN;
+
+    // Determine horizontal position
+    let left = rect.left + scrollX;
+
+    // Adjust horizontal position if popup would overflow right edge
+    if (left + POPUP_WIDTH > viewportWidth - MARGIN) {
+      left = viewportWidth - POPUP_WIDTH - MARGIN;
+    }
+
+    // Adjust horizontal position if popup would overflow left edge
+    if (left < MARGIN) {
+      left = MARGIN;
+    }
+
+    // If showing above, ensure it doesn't go off the top of the viewport
+    if (showAbove && top - POPUP_HEIGHT < MARGIN) {
+      showAbove = false;
+      top = rect.bottom + scrollY + MARGIN;
+    }
+
+    // If showing below, ensure it doesn't go off the bottom of the viewport
+    if (!showAbove && top + POPUP_HEIGHT > viewportHeight + scrollY - MARGIN) {
+      showAbove = true;
+      top = rect.top + scrollY - MARGIN;
+    }
+
+    return { top, left, showAbove };
   };
 
   if (loading) {
@@ -284,90 +332,90 @@ const Analytics: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <div>
+              <div>
                     <h3 className="text-base sm:text-lg font-semibold mb-4">
                       Monthly Spend by Category ({currency})
                     </h3>
-                    <div className="h-[300px] sm:h-[400px]">
-                      <Bar
-                        data={monthlySpendData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: isMobile ? 'bottom' : 'top',
-                              labels: {
-                                boxWidth: isMobile ? 12 : 40,
-                                padding: isMobile ? 10 : 20,
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: function(context) {
-                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
-                                }
-                              }
-                            }
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              ticks: {
-                                callback: function(value) {
-                                  return formatAmount(value as number);
-                                },
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            x: {
-                              ticks: {
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
+                <div className="h-[300px] sm:h-[400px]">
+                  <Bar
+                    data={monthlySpendData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: isMobile ? 'bottom' : 'top',
+                          labels: {
+                            boxWidth: isMobile ? 12 : 40,
+                            padding: isMobile ? 10 : 20,
+                            font: {
+                              size: isMobile ? 10 : 12
                             }
                           }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
-                    <div className="h-[300px] sm:h-[400px]">
-                      <Pie
-                        data={monthlySpendData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: isMobile ? 'bottom' : 'top',
-                              labels: {
-                                boxWidth: isMobile ? 12 : 40,
-                                padding: isMobile ? 10 : 20,
-                                font: {
-                                  size: isMobile ? 10 : 12
-                                }
-                              }
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: function(context) {
-                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
-                                }
-                              }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.label}: ${formatAmount(context.raw as number)}`;
                             }
                           }
-                        }}
-                      />
-                    </div>
-                  </div>
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          ticks: {
+                            callback: function(value) {
+                              return formatAmount(value as number);
+                            },
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        },
+                        x: {
+                          ticks: {
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
+                <div className="h-[300px] sm:h-[400px]">
+                  <Pie
+                    data={monthlySpendData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: isMobile ? 'bottom' : 'top',
+                          labels: {
+                            boxWidth: isMobile ? 12 : 40,
+                            padding: isMobile ? 10 : 20,
+                            font: {
+                              size: isMobile ? 10 : 12
+                            }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.label}: ${formatAmount(context.raw as number)}`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
                 </>
               )}
             </div>
@@ -414,22 +462,12 @@ const Analytics: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
-                            const viewportHeight = window.innerHeight;
-                            const viewportWidth = window.innerWidth;
-                            
-                            const spaceAbove = rect.top;
-                            const spaceBelow = viewportHeight - rect.bottom;
-                            const showAbove = spaceAbove > spaceBelow;
-                            
-                            let left = rect.left;
-                            if (left + 280 > viewportWidth) {
-                              left = viewportWidth - 290;
-                            }
+                            const position = calculatePopupPosition(rect);
                             
                             setPopupPosition({
-                              top: showAbove ? rect.top + window.scrollY : rect.bottom + window.scrollY,
-                              left: Math.max(10, left + window.scrollX),
-                              showAbove
+                              top: position.top,
+                              left: position.left,
+                              showAbove: position.showAbove
                             });
                             setSelectedSubscription(arg.event.extendedProps.subscription);
                           }}
@@ -447,7 +485,7 @@ const Analytics: React.FC = () => {
                   />
                 </div>
 
-                {/* Update Subscription Details Popup */}
+                {/* Subscription Details Popup */}
                 {selectedSubscription && (
                   <>
                     <div 
@@ -458,12 +496,14 @@ const Analytics: React.FC = () => {
                       className={`
                         fixed z-50 bg-white/95 rounded-lg shadow-lg
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
+                        transition-all duration-200 ease-out
                       `}
                       style={{
                         top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
                         bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
-                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
+                        transform: `translate3d(0, ${popupPosition.showAbove ? '-10px' : '10px'}, 0)`,
+                        opacity: selectedSubscription ? 1 : 0,
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}
                     >

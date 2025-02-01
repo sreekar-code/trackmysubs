@@ -23,7 +23,7 @@ interface SubscriptionModalProps {
   showModal: boolean;
   setShowModal: (show: boolean) => void;
   subscriptionForm: SubscriptionFormData;
-  setSubscriptionForm: (form: SubscriptionFormData) => void;
+  setSubscriptionForm: React.Dispatch<React.SetStateAction<SubscriptionFormData>>;
   editingSubscription: string | null;
   setEditingSubscription: (id: string | null) => void;
   categories: Category[];
@@ -60,21 +60,21 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    const updates: any = { [name]: value };
-    if (name === 'start_date' || name === 'billing_cycle') {
-      const startDate = name === 'start_date' ? value : subscriptionForm.start_date;
-      const cycle = name === 'billing_cycle' ? value : subscriptionForm.billing_cycle;
+    setSubscriptionForm(prev => {
+      const updates: Partial<SubscriptionFormData> = { [name]: value };
       
-      if (startDate) {
-        const endDate = calculateEndDate(startDate, cycle);
-        updates.next_billing = endDate;
+      if (name === 'start_date' || name === 'billing_cycle') {
+        const startDate = name === 'start_date' ? value : prev.start_date;
+        const cycle = name === 'billing_cycle' ? value : prev.billing_cycle;
+        
+        if (startDate) {
+          const endDate = calculateEndDate(startDate, cycle);
+          updates.next_billing = endDate;
+        }
       }
-    }
 
-    setSubscriptionForm(prev => ({
-      ...prev,
-      ...updates
-    }));
+      return { ...prev, ...updates };
+    });
   };
 
   const calculateEndDate = (startDate: string, billingCycle: string): string => {
@@ -98,36 +98,33 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) {
-      setModalError('Category name cannot be empty');
-      return;
-    }
+    if (!newCategoryName.trim()) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { data: newCategory, error } = await supabase
         .from('subscription_categories')
-        .insert([{
+        .insert({
           name: newCategoryName.trim(),
           user_id: user.id,
           is_default: false
-        }])
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      setSubscriptionForm(prev => ({ ...prev, category_id: data.id }));
-      setNewCategoryName('');
-      setShowNewCategoryInput(false);
-      setModalError(null);
+      if (newCategory) {
+        setSubscriptionForm(prev => ({
+          ...prev,
+          category_id: newCategory.id
+        }));
+        setShowNewCategoryInput(false);
+        setNewCategoryName('');
+      }
     } catch (err) {
-      console.error('Error creating category:', err);
       setModalError(err instanceof Error ? err.message : 'Failed to create category');
     }
   };
@@ -150,24 +147,39 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         start_date: subscriptionForm.start_date,
         next_billing: subscriptionForm.next_billing,
         category_id: subscriptionForm.category_id || null,
-        currency: subscriptionForm.currency || 'USD'
+        currency: subscriptionForm.currency || 'USD',
+        user_id: user.id
       };
 
       let error;
 
       if (editingSubscription) {
-        ({ error } = await supabase
+        const { error: updateError } = await supabase
           .from('subscriptions')
-          .update(subscriptionData)
-          .eq('id', editingSubscription));
+          .update({
+            name: subscriptionData.name,
+            price: subscriptionData.price,
+            billing_cycle: subscriptionData.billing_cycle,
+            start_date: subscriptionData.start_date,
+            next_billing: subscriptionData.next_billing,
+            category_id: subscriptionData.category_id,
+            currency: subscriptionData.currency
+          })
+          .eq('id', editingSubscription)
+          .eq('user_id', user.id);
+        error = updateError;
       } else {
-        ({ error } = await supabase
+        const { error: insertError } = await supabase
           .from('subscriptions')
-          .insert([{ ...subscriptionData, user_id: user.id }]));
+          .insert([subscriptionData]);
+        error = insertError;
       }
 
       if (error) throw error;
 
+      await fetchSubscriptions();
+      setShowModal(false);
+      setEditingSubscription(null);
       setSubscriptionForm({
         name: '',
         price: '',
@@ -177,10 +189,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         category_id: '',
         currency: 'USD'
       });
-      setShowModal(false);
-      setEditingSubscription(null);
-
-      await fetchSubscriptions();
     } catch (err) {
       setModalError(err instanceof Error ? err.message : 'Failed to save subscription');
     }
@@ -327,13 +335,25 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   placeholder="Enter category name"
                   className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-l-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <button
-                  type="button"
-                  onClick={handleCreateCategory}
-                  className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Add
-                </button>
+                <div className="flex">
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewCategoryInput(false);
+                      setNewCategoryName('');
+                    }}
+                    className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex rounded-md shadow-sm">
@@ -345,21 +365,40 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   className="flex-1 block w-full rounded-l-md border border-gray-300 py-2.5 px-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select a category</option>
-                  {sortedCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
+                  {/* Default Categories */}
+                  <optgroup label="Default Categories">
+                    {sortedCategories
+                      .filter(category => category.is_default)
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                  {/* User Categories */}
+                  <optgroup label="Your Categories">
+                    {sortedCategories
+                      .filter(category => !category.is_default)
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </optgroup>
                 </select>
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryInput(true)}
                   className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  <Tag className="h-4 w-4 mr-1" />
                   New
                 </button>
               </div>
             )}
+            <p className="mt-1 text-sm text-gray-500">
+              Choose a category or create a new one to organize your subscriptions
+            </p>
           </div>
 
           {/* Action Buttons */}

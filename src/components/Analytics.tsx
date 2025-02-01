@@ -143,7 +143,8 @@ const Analytics: React.FC = () => {
   const calendarEvents = subscriptions.map(sub => ({
     title: sub.name,
     date: sub.next_billing,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#E2E8F0',
+    textColor: '#1E293B',
     extendedProps: {
       subscription: sub
     }
@@ -321,8 +322,8 @@ const Analytics: React.FC = () => {
 
           {activeView === 'calendar' && (
             <div>
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Calendar</h3>
-              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow relative">
+              <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">Subscription Calendar</h3>
+              <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow-sm relative">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
                     plugins={[dayGridPlugin]}
@@ -355,7 +356,7 @@ const Analytics: React.FC = () => {
                           className={`
                             p-2 rounded-md w-full
                             ${isMobile ? 'text-xs' : 'text-sm'} 
-                            text-white font-semibold cursor-pointer
+                            font-medium cursor-pointer hover:bg-gray-200 transition-colors
                           `}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -363,17 +364,13 @@ const Analytics: React.FC = () => {
                             const viewportHeight = window.innerHeight;
                             const viewportWidth = window.innerWidth;
                             
-                            // Calculate space above and below the clicked event
                             const spaceAbove = rect.top;
                             const spaceBelow = viewportHeight - rect.bottom;
-                            
-                            // Calculate if popup should appear above or below
                             const showAbove = spaceAbove > spaceBelow;
                             
-                            // Calculate horizontal position to ensure popup stays in viewport
                             let left = rect.left;
-                            if (left + 280 > viewportWidth) { // 280 is popup width
-                              left = viewportWidth - 290; // 10px margin from edge
+                            if (left + 280 > viewportWidth) {
+                              left = viewportWidth - 290;
                             }
                             
                             setPopupPosition({
@@ -388,34 +385,33 @@ const Analytics: React.FC = () => {
                         </div>
                       )
                     }}
-                    dayHeaderClassNames={isMobile ? 'text-xs py-1' : 'py-2'}
-                    dayCellClassNames={isMobile ? 'text-xs' : 'text-sm'}
-                    eventClassNames="rounded-md shadow-sm hover:shadow-md transition-shadow"
+                    dayHeaderClassNames="text-gray-600 font-medium py-2"
+                    dayCellClassNames="text-gray-700 hover:bg-gray-50"
+                    eventClassNames="shadow-sm hover:shadow transition-shadow"
                     contentHeight={isMobile ? "auto" : 600}
                     handleWindowResize={true}
                     stickyHeaderDates={true}
                   />
                 </div>
 
-                {/* Subscription Details Popup */}
+                {/* Update Subscription Details Popup */}
                 {selectedSubscription && (
                   <>
                     <div 
-                      className="fixed inset-0 z-40" 
+                      className="fixed inset-0 z-40 bg-gray-500/20 backdrop-blur-sm" 
                       onClick={() => setSelectedSubscription(null)}
                     />
                     <div
                       className={`
-                        fixed z-50 bg-white rounded-lg shadow-lg
+                        fixed z-50 bg-white/95 rounded-lg shadow-lg
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
-                        backdrop-blur-sm bg-white/95
                       `}
                       style={{
                         top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
                         bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
                         transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}
                     >
                       <div className="flex flex-col space-y-3">

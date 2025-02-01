@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
         supabase
           .from('subscription_categories')
           .select('*')
-          .eq('user_id', user.id)
+          .or(`user_id.eq.${user.id},is_default.eq.true`)
           .order('created_at', { ascending: true })
       ]);
 
@@ -109,8 +109,23 @@ const Dashboard: React.FC = () => {
         categories: catsResponse.data?.length || 0
       });
 
-      setSubscriptions(subsResponse.data || []);
-      setCategories(catsResponse.data || []);
+      setSubscriptions(subsResponse.data?.map((subscription: any) => ({
+        id: subscription.id,
+        user_id: subscription.user_id,
+        name: subscription.name,
+        price: subscription.price,
+        billing_cycle: subscription.billing_cycle,
+        start_date: subscription.start_date,
+        next_billing: subscription.next_billing,
+        category_id: subscription.category_id,
+        category: subscription.category
+      })) || []);
+      
+      setCategories(catsResponse.data?.map((category: any) => ({
+        id: category.id,
+        name: category.name,
+        is_default: category.is_default
+      })) || []);
       setError(null);
     } catch (err) {
       console.error('❌ Error fetching data:', err);
@@ -144,11 +159,16 @@ const Dashboard: React.FC = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subscription_categories',
-          filter: `user_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
+          table: 'subscription_categories'
         },
-        async (payload) => {
+        async (payload: any) => {
           console.log('📦 Category change received:', payload);
+          
+          // Only process changes for user's categories or default categories
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!payload.new?.is_default && payload.new?.user_id !== user?.id) {
+            return;
+          }
           
           if (payload.eventType === 'INSERT') {
             const newCategory = payload.new as Category;

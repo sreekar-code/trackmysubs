@@ -56,32 +56,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <Feature
                   icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Quick Overview"
-                  description="Simple dashboard to manage all your subscriptions in one place."
+                  description="Manage all your subscriptions in a clean, simple dashboard."
                 />
                 <Feature
                   icon={<Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Renewal Tracking"
-                  description="Visual indicators to help you spot upcoming and overdue renewals."
+                  description="Spot upcoming and overdue renewals at a glance."
                 />
                 <Feature
                   icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Monthly Spend"
-                  description="Real-time calculation of your total monthly subscription costs."
+                  description="Track your total subscription costs in real-time."
                 />
                 <Feature
                   icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Custom Categories"
-                  description="Create and manage your own categories to organize subscriptions better."
+                  description="Organize subscriptions with your own categories."
                 />
                 <Feature
                   icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Multi-Currency"
-                  description="Support for multiple currencies with automatic conversion to your preferred currency."
+                  description="Auto-convert costs to your preferred currency."
                 />
                 <Feature
                   icon={<BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
                   title="Smart Analytics"
-                  description="Visualize your spending patterns with interactive charts and calendar view."
+                  description="View spending trends with charts and calendar."
                 />
               </div>
             </div>

@@ -407,53 +407,65 @@ const Analytics: React.FC = () => {
                       onClick={() => setSelectedSubscription(null)}
                     />
                     <div
-                      className="fixed z-50 bg-white rounded-lg shadow-lg p-4 w-[280px]"
+                      className={`
+                        fixed z-50 bg-white rounded-lg shadow-lg
+                        ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
+                        backdrop-blur-sm bg-white/95
+                      `}
                       style={{
                         top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
                         bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
-                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)'
+                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
                       }}
                     >
-                      <div className="flex flex-col space-y-2">
+                      <div className="flex flex-col space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">{selectedSubscription.name}</h4>
+                          <h4 className={`font-semibold text-gray-900 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                            {selectedSubscription.name}
+                          </h4>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedSubscription(null);
                             }}
-                            className="text-gray-400 hover:text-gray-600 p-1"
+                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
                           >
                             ×
                           </button>
                         </div>
                         <div className="h-px bg-gray-200" />
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            <span className="text-gray-500">Price:</span>{' '}
+                        <div className={`space-y-3 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Price</span>
                             <span className="font-medium text-gray-900">
                               {formatAmount(selectedSubscription.price)}
                             </span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Category:</span>{' '}
-                            <span className="font-medium text-gray-900">
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Category</span>
+                            <span className={`
+                              font-medium px-2 py-1 rounded-full text-sm
+                              ${selectedSubscription.category?.name === 'Streaming' ? 'bg-blue-100 text-blue-700' :
+                                selectedSubscription.category?.name === 'Software' ? 'bg-red-100 text-red-700' :
+                                'bg-emerald-100 text-emerald-700'}
+                            `}>
                               {selectedSubscription.category?.name || 'Uncategorized'}
                             </span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Billing Cycle:</span>{' '}
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Billing Cycle</span>
                             <span className="font-medium text-gray-900">
                               {selectedSubscription.billing_cycle}
                             </span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Next Billing:</span>{' '}
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Next Billing</span>
                             <span className="font-medium text-gray-900">
                               {new Date(selectedSubscription.next_billing).toLocaleDateString()}
                             </span>
-                          </p>
+                          </div>
                         </div>
                       </div>
                     </div>

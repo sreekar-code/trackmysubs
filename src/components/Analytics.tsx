@@ -55,8 +55,6 @@ const Analytics: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     const handleResize = () => {
@@ -141,16 +139,11 @@ const Analytics: React.FC = () => {
   };
 
   const calendarEvents = subscriptions.map(sub => ({
-    title: sub.name,
+    title: `${sub.name} (${formatAmount(sub.price)})`,
     date: sub.next_billing,
     backgroundColor: sub.category?.name === 'Streaming' ? '#3B82F6' :
                     sub.category?.name === 'Software' ? '#EF4444' :
                     '#10B981',
-    extendedProps: {
-      price: formatAmount(sub.price),
-      category: sub.category?.name || 'Uncategorized',
-      billingCycle: sub.billing_cycle
-    }
   }));
 
   const timelineEvents = [...subscriptions]
@@ -326,7 +319,7 @@ const Analytics: React.FC = () => {
           {activeView === 'calendar' && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Calendar</h3>
-              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow relative">
+              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
                     plugins={[dayGridPlugin]}
@@ -354,88 +347,27 @@ const Analytics: React.FC = () => {
                       }
                     }}
                     eventContent={(arg) => {
-                      const event = arg.event;
                       return (
                         <div 
                           className={`
-                            p-2 rounded-md cursor-pointer
+                            p-2 rounded-md
                             ${isMobile ? 'text-xs' : 'text-sm'} 
-                            text-gray-700 hover:opacity-90 transition-opacity
+                            text-white font-medium
                             flex items-center justify-between
                           `}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setPopupPosition({
-                              top: rect.bottom + window.scrollY,
-                              left: rect.left + window.scrollX
-                            });
-                            setSelectedEvent(event);
-                          }}
                         >
-                          <span className="truncate">{event.title}</span>
+                          <span className="truncate">{arg.event.title}</span>
                         </div>
                       )
                     }}
                     dayHeaderClassNames={isMobile ? 'text-xs py-1' : 'py-2'}
                     dayCellClassNames={isMobile ? 'text-xs' : 'text-sm'}
-                    eventClassNames="rounded-md shadow-sm hover:shadow-md transition-shadow"
+                    eventClassNames="rounded-md shadow-sm"
                     contentHeight={isMobile ? "auto" : 600}
                     handleWindowResize={true}
                     stickyHeaderDates={true}
                   />
                 </div>
-
-                {/* Subscription Details Popup */}
-                {selectedEvent && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setSelectedEvent(null)}
-                    />
-                    <div
-                      className="absolute z-50 bg-white rounded-lg shadow-lg p-4 min-w-[250px] max-w-[300px]"
-                      style={{
-                        top: popupPosition.top + 'px',
-                        left: popupPosition.left + 'px',
-                        transform: 'translateY(8px)'
-                      }}
-                    >
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">{selectedEvent.title}</h4>
-                          <button
-                            onClick={() => setSelectedEvent(null)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <div className="h-px bg-gray-200 my-1" />
-                        <div className="space-y-1.5">
-                          <p className="text-sm">
-                            <span className="text-gray-500">Price:</span>{' '}
-                            <span className="font-medium text-gray-900">{selectedEvent.extendedProps.price}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Category:</span>{' '}
-                            <span className="font-medium text-gray-900">{selectedEvent.extendedProps.category}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Billing:</span>{' '}
-                            <span className="font-medium text-gray-900">{selectedEvent.extendedProps.billingCycle}</span>
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-gray-500">Due Date:</span>{' '}
-                            <span className="font-medium text-gray-900">
-                              {new Date(selectedEvent.startStr).toLocaleDateString()}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           )}

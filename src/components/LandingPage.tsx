@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditCard, BarChart, DollarSign, Zap, Tag, Globe } from 'lucide-react';
+import { CreditCard, Clock, DollarSign, Zap, Tag, Globe } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -27,21 +27,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
               <div className="max-w-4xl mx-auto text-center">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
-                  <span className="inline-block">Smart Subscription</span>{' '}
+                  <span className="inline-block">Track Your</span>{' '}
+                  <span className="inline-block">Subscriptions</span>
                   <span className="block mt-2 bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                    Management
+                    All in One Place
                   </span>
                 </h1>
                 <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-                  Track, analyze, and optimize your subscriptions in one powerful dashboard.
-                  Get insights into your spending and never miss a renewal.
+                  Keep track of your subscriptions and never miss a renewal.
                 </p>
                 <div className="mt-8 sm:mt-10">
                   <button
                     onClick={onGetStarted}
                     className="inline-flex items-center justify-center px-6 sm:px-7 py-3 sm:py-3.5 text-base sm:text-lg font-medium rounded-xl text-white bg-blue-500 hover:bg-blue-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98] transform hover:-translate-y-0.5"
                   >
-                    Start Tracking Now
+                    Get Started
                   </button>
                 </div>
               </div>
@@ -51,32 +51,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
         <div className="bg-white py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-3">
-              <Feature
-                icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                title="Smart Dashboard"
-                description="Get a clear overview of all your subscriptions with intelligent organization and quick actions."
-              />
-              <Feature
-                icon={<BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                title="Analytics & Insights"
-                description="Visualize spending patterns and track subscription costs over time with detailed analytics."
-              />
-              <Feature
-                icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                title="Multi-Currency Support"
-                description="Track subscriptions in multiple currencies with automatic conversion to your preferred currency."
-              />
-              <Feature
-                icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                title="Custom Categories"
-                description="Organize subscriptions with custom categories and tags for better expense management."
-              />
-              <Feature
-                icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                title="Renewal Tracking"
-                description="Stay on top of your subscriptions with smart renewal notifications and timeline view."
-              />
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+              <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-3">
+                <Feature
+                  icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Quick Overview"
+                  description="See all your subscriptions at a glance."
+                />
+                <Feature
+                  icon={<Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Track Renewals"
+                  description="See when your subscriptions are due for renewal."
+                />
+                <Feature
+                  icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Monthly Spend"
+                  description="Know exactly how much you spend monthly."
+                />
+                <Feature
+                  icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Custom Categories"
+                  description="Organize subscriptions your way."
+                />
+                <Feature
+                  icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
+                  title="Multi-Currency"
+                  description="Track expenses in your preferred currency."
+                />
+              </div>
             </div>
           </div>
         </div>

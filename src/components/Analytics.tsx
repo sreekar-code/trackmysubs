@@ -500,7 +500,7 @@ const Analytics: React.FC = () => {
                         </div>
                         <div className="flex justify-between sm:text-right items-center sm:block">
                           <p className="text-sm font-medium text-gray-900">
-                            {formatAmount(event.price)}
+                            {formatSubscriptionAmount(event.price, event.currency)}
                           </p>
                           <p className="text-xs text-gray-500">
                             {event.billing_cycle}

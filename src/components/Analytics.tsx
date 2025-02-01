@@ -212,7 +212,7 @@ const Analytics: React.FC = () => {
   const calculatePopupPosition = (rect: DOMRect): { top: number; left: number; showAbove: boolean; showLeft: boolean } => {
     const POPUP_WIDTH = 320;
     const POPUP_HEIGHT = 200;
-    const MARGIN = 10;
+    const MARGIN = 16;
     
     // Get calendar container dimensions
     const calendarContainer = document.querySelector('.fc-view-harness');
@@ -225,48 +225,82 @@ const Analytics: React.FC = () => {
     const scrollX = window.scrollX;
 
     // Calculate available space in all directions
-    const spaceAbove = rect.top - containerRect.top;
-    const spaceBelow = containerRect.bottom - rect.bottom;
-    const spaceLeft = rect.left - containerRect.left;
-    const spaceRight = containerRect.right - rect.right;
+    const spaceAbove = rect.top - Math.max(containerRect.top, 0);
+    const spaceBelow = Math.min(containerRect.bottom, viewportHeight) - rect.bottom;
+    const spaceLeft = rect.left - Math.max(containerRect.left, 0);
+    const spaceRight = Math.min(containerRect.right, viewportWidth) - rect.right;
+
+    // Initialize position variables
+    let top: number;
+    let left: number;
+    let showAbove: boolean;
+    let showLeft: boolean;
 
     // Determine vertical position
-    let showAbove = spaceBelow < POPUP_HEIGHT && spaceAbove > spaceBelow;
-    let top = showAbove ? rect.top + scrollY - MARGIN : rect.bottom + scrollY + MARGIN;
+    if (spaceBelow >= POPUP_HEIGHT || spaceBelow > spaceAbove) {
+      // Show below if there's enough space or more space than above
+      showAbove = false;
+      top = rect.bottom + scrollY + MARGIN;
+      
+      // Ensure it doesn't go below viewport
+      if (top + POPUP_HEIGHT > viewportHeight + scrollY) {
+        top = viewportHeight + scrollY - POPUP_HEIGHT - MARGIN;
+      }
+    } else {
+      // Show above
+      showAbove = true;
+      top = rect.top + scrollY - POPUP_HEIGHT - MARGIN;
+      
+      // Ensure it doesn't go above viewport
+      if (top < scrollY) {
+        top = scrollY + MARGIN;
+      }
+    }
 
     // Determine horizontal position
-    let showLeft = spaceRight < POPUP_WIDTH && spaceLeft > spaceRight;
-    let left = showLeft ? rect.left + scrollX - POPUP_WIDTH + rect.width : rect.left + scrollX;
+    if (spaceRight >= POPUP_WIDTH || spaceRight > spaceLeft) {
+      // Show on right if there's enough space or more space than left
+      showLeft = false;
+      left = rect.left + scrollX;
+      
+      // Ensure it doesn't go beyond right edge
+      if (left + POPUP_WIDTH > viewportWidth + scrollX) {
+        left = viewportWidth + scrollX - POPUP_WIDTH - MARGIN;
+      }
+    } else {
+      // Show on left
+      showLeft = true;
+      left = rect.right + scrollX - POPUP_WIDTH;
+      
+      // Ensure it doesn't go beyond left edge
+      if (left < scrollX) {
+        left = scrollX + MARGIN;
+      }
+    }
 
-    // Adjust for right edge
-    if (left + POPUP_WIDTH > containerRect.right + scrollX) {
+    // Additional adjustments for calendar container boundaries
+    // Ensure popup stays within calendar container horizontally
+    if (left < containerRect.left + scrollX) {
+      left = containerRect.left + scrollX + MARGIN;
+    } else if (left + POPUP_WIDTH > containerRect.right + scrollX) {
       left = containerRect.right + scrollX - POPUP_WIDTH - MARGIN;
     }
 
-    // Adjust for left edge
-    if (left < containerRect.left + scrollX) {
-      left = containerRect.left + scrollX + MARGIN;
-    }
-
-    // Adjust for top edge
-    if (showAbove && top - POPUP_HEIGHT < containerRect.top + scrollY) {
+    // If popup would be cut off by top of viewport, show it below instead
+    if (top < scrollY + MARGIN) {
       showAbove = false;
       top = rect.bottom + scrollY + MARGIN;
     }
 
-    // Adjust for bottom edge
-    if (!showAbove && top + POPUP_HEIGHT > containerRect.bottom + scrollY) {
+    // If popup would be cut off by bottom of viewport, show it above instead
+    if (top + POPUP_HEIGHT > viewportHeight + scrollY - MARGIN) {
       showAbove = true;
       top = rect.top + scrollY - POPUP_HEIGHT - MARGIN;
     }
 
-    // Final viewport boundary checks
-    if (top < scrollY + MARGIN) {
-      top = scrollY + MARGIN;
-    }
-    if (top + POPUP_HEIGHT > scrollY + viewportHeight - MARGIN) {
-      top = scrollY + viewportHeight - POPUP_HEIGHT - MARGIN;
-    }
+    // Final position adjustments to ensure visibility
+    top = Math.max(scrollY + MARGIN, Math.min(top, viewportHeight + scrollY - POPUP_HEIGHT - MARGIN));
+    left = Math.max(scrollX + MARGIN, Math.min(left, viewportWidth + scrollX - POPUP_WIDTH - MARGIN));
 
     return { top, left, showAbove, showLeft };
   };
@@ -514,10 +548,9 @@ const Analytics: React.FC = () => {
                         transition-all duration-200 ease-out
                       `}
                       style={{
-                        top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
-                        bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
+                        top: `${popupPosition.top}px`,
                         left: `${popupPosition.left}px`,
-                        transform: `translate3d(${popupPosition.showLeft ? '10px' : '-10px'}, ${popupPosition.showAbove ? '-10px' : '10px'}, 0)`,
+                        transform: `translate3d(0, 0, 0)`,
                         opacity: selectedSubscription ? 1 : 0,
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}

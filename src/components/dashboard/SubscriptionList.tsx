@@ -48,6 +48,12 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
     }
   };
 
+  const isExpired = (nextBilling: string): boolean => {
+    const today = new Date();
+    const billingDate = new Date(nextBilling);
+    return billingDate < today;
+  };
+
   const isExpiringSoon = (nextBilling: string): boolean => {
     const today = new Date();
     const billingDate = new Date(nextBilling);
@@ -82,6 +88,7 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
           <div 
             key={subscription.id}
             className={`p-4 border-b border-gray-200 ${
+              isExpired(subscription.next_billing) ? 'bg-red-50' :
               isExpiringSoon(subscription.next_billing) ? 'bg-yellow-50' : ''
             }`}
           >
@@ -100,8 +107,14 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                   <p className="text-gray-600">{subscription.billing_cycle}</p>
                   <p className="text-gray-600">Started: {new Date(subscription.start_date).toLocaleDateString()}</p>
                   <div className="flex items-center">
-                    <span className="text-gray-600">Next bill: {new Date(subscription.next_billing).toLocaleDateString()}</span>
-                    {isExpiringSoon(subscription.next_billing) && (
+                    <span className="text-gray-600">
+                      Next bill: {new Date(subscription.next_billing).toLocaleDateString()}
+                    </span>
+                    {isExpired(subscription.next_billing) ? (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        Expired
+                      </span>
+                    ) : isExpiringSoon(subscription.next_billing) && (
                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                         Renew Soon
                       </span>
@@ -166,6 +179,7 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
               <tr 
                 key={subscription.id}
                 className={`hover:bg-gray-50 ${
+                  isExpired(subscription.next_billing) ? 'bg-red-50' :
                   isExpiringSoon(subscription.next_billing) ? 'bg-yellow-50' : ''
                 }`}
               >
@@ -203,7 +217,11 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                     <span className="text-sm text-gray-900">
                       {new Date(subscription.next_billing).toLocaleDateString()}
                     </span>
-                    {isExpiringSoon(subscription.next_billing) && (
+                    {isExpired(subscription.next_billing) ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        Expired
+                      </span>
+                    ) : isExpiringSoon(subscription.next_billing) && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                         Renew Soon
                       </span>

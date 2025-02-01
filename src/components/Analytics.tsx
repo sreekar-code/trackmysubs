@@ -325,20 +325,20 @@ const Analytics: React.FC = () => {
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">Subscription Calendar</h3>
               <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow-sm relative">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
-                  <FullCalendar
-                    plugins={[dayGridPlugin]}
-                    initialView="dayGridMonth"
-                    events={calendarEvents}
-                    height="auto"
-                    headerToolbar={{
+                <FullCalendar
+                  plugins={[dayGridPlugin]}
+                  initialView="dayGridMonth"
+                  events={calendarEvents}
+                  height="auto"
+                  headerToolbar={{
                       left: 'prev,next',
-                      center: 'title',
-                      right: 'dayGridMonth'
-                    }}
-                    dayMaxEvents={isMobile ? 2 : true}
+                    center: 'title',
+                    right: 'dayGridMonth'
+                  }}
+                  dayMaxEvents={isMobile ? 2 : true}
                     eventDisplay="block"
-                    views={{
-                      dayGridMonth: {
+                  views={{
+                    dayGridMonth: {
                         titleFormat: { 
                           year: 'numeric', 
                           month: isMobile ? 'short' : 'long'

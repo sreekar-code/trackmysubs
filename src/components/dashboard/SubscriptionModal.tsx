@@ -124,11 +124,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     e.preventDefault();
     setModalError(null);
 
-    if (isExpired(subscriptionForm.next_billing)) {
-      setModalError('Cannot add a subscription with an expired end date');
-      return;
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -176,12 +171,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setModalError(err instanceof Error ? err.message : 'Failed to save subscription');
     }
   };
-
-  const isExpired = (date: string): boolean => {
-    return new Date(date) < new Date();
-  };
-
-  const today = new Date().toISOString().split('T')[0];
 
   // Sort categories to put "Other" at the end
   const sortedCategories = [...categories].sort((a, b) => {
@@ -282,7 +271,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               name="start_date"
               id="start_date"
               required
-              max={today}
               value={subscriptionForm.start_date}
               onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit2, Tag, Trash2 } from 'lucide-react';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { currencyService } from '../../services/currencyService';
 
 interface Subscription {
   id: string;
   user_id: string;
   name: string;
   price: number;
+  currency: string;
   billing_cycle: string;
   start_date: string;
   next_billing: string;
@@ -37,18 +39,35 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
   showRenewingSoon,
   showExpired,
 }) => {
-  const { formatAmount } = useCurrency();
+  const { currency: displayCurrency } = useCurrency();
+  const [convertedPrices, setConvertedPrices] = useState<{ [key: string]: number }>({});
 
-  const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
-    switch (billingCycle) {
-      case 'Yearly':
-        return price / 12;
-      case 'Quarterly':
-        return price / 3;
-      default:
-        return price;
-    }
+  const calculateMonthlyPrice = async (price: number, billingCycle: string, fromCurrency: string): Promise<number> => {
+    const monthlyPrice = (() => {
+      switch (billingCycle) {
+        case 'Yearly':
+          return price / 12;
+        case 'Quarterly':
+          return price / 3;
+        default:
+          return price;
+      }
+    })();
+
+    return await currencyService.convertAmount(monthlyPrice, fromCurrency, displayCurrency);
   };
+
+  useEffect(() => {
+    const updateConvertedPrices = async () => {
+      const prices: { [key: string]: number } = {};
+      for (const sub of subscriptions) {
+        prices[sub.id] = await calculateMonthlyPrice(sub.price, sub.billing_cycle, sub.currency);
+      }
+      setConvertedPrices(prices);
+    };
+
+    updateConvertedPrices();
+  }, [subscriptions, displayCurrency]);
 
   const isExpired = (nextBilling: string): boolean => {
     const today = new Date();
@@ -108,12 +127,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 <h3 className="font-medium text-gray-900">{subscription.name}</h3>
                 <div className="mt-1 space-y-1 text-sm">
                   <p className="font-medium text-gray-900">
-                    {formatAmount(subscription.price)}
-                    {subscription.billing_cycle !== 'Monthly' && (
-                      <span className="ml-1 text-xs text-gray-500">
-                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
-                      </span>
-                    )}
+                    {currencyService.formatAmount(subscription.price, subscription.currency)}
+                    <span className="ml-1 text-xs text-gray-500">
+                      ({currencyService.formatAmount(convertedPrices[subscription.id] || 0, displayCurrency)}/mo)
+                    </span>
                   </p>
                   <p className="text-gray-600">{subscription.billing_cycle}</p>
                   <p className="text-gray-600">Started: {new Date(subscription.start_date).toLocaleDateString()}</p>
@@ -207,12 +224,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {formatAmount(subscription.price)}
-                    {subscription.billing_cycle !== 'Monthly' && (
-                      <span className="ml-1 text-xs text-gray-500">
-                        ({formatAmount(calculateMonthlyPrice(subscription.price, subscription.billing_cycle))}/mo)
-                      </span>
-                    )}
+                    {currencyService.formatAmount(subscription.price, subscription.currency)}
+                    <span className="ml-1 text-xs text-gray-500">
+                      ({currencyService.formatAmount(convertedPrices[subscription.id] || 0, displayCurrency)}/mo)
+                    </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

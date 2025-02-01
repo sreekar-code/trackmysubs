@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Tag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useCurrency, currencies } from '../../contexts/CurrencyContext';
@@ -12,7 +12,6 @@ interface Category {
 interface SubscriptionFormData {
   name: string;
   price: string;
-  currency: string;
   billing_cycle: string;
   start_date: string;
   next_billing: string;
@@ -44,16 +43,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const { currency } = useCurrency();
-
-  // Initialize currency if it's empty
-  useEffect(() => {
-    if (!subscriptionForm.currency) {
-      setSubscriptionForm(prev => ({
-        ...prev,
-        currency: currency
-      }));
-    }
-  }, [currency, subscriptionForm.currency, setSubscriptionForm]);
+  const currencySymbol = currencies[currency as keyof typeof currencies].symbol;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -144,7 +134,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       const subscriptionData = {
         name: subscriptionForm.name,
         price: parseFloat(subscriptionForm.price),
-        currency: subscriptionForm.currency,
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
         next_billing: subscriptionForm.next_billing,
@@ -169,7 +158,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setSubscriptionForm({
         name: '',
         price: '',
-        currency: currency,
         billing_cycle: 'Monthly',
         start_date: '',
         next_billing: '',
@@ -238,37 +226,21 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <label htmlFor="price" className="block text-sm font-medium text-gray-700">
               Price
             </label>
-            <div className="mt-1 flex rounded-md shadow-sm">
-              <div className="relative flex-grow">
-                <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={subscriptionForm.price}
-                  onChange={handleInputChange}
-                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-none rounded-l-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">
-                    {currencies[subscriptionForm.currency || currency as keyof typeof currencies].symbol}
-                  </span>
-                </div>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">{currencySymbol}</span>
               </div>
-              <select
-                name="currency"
-                value={subscriptionForm.currency || currency}
+              <input
+                type="number"
+                name="price"
+                id="price"
+                required
+                min="0"
+                step="0.01"
+                value={subscriptionForm.price}
                 onChange={handleInputChange}
-                className="flex-none w-24 inline-flex items-center px-3 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm"
-              >
-                {Object.entries(currencies).map(([code, { name }]) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
+                className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
           </div>
 

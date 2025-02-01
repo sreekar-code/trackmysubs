@@ -7,7 +7,6 @@
       - `user_id` (uuid, references auth.users)
       - `name` (text)
       - `price` (numeric)
-      - `currency` (text)
       - `billing_cycle` (text)
       - `start_date` (date)
       - `next_billing` (date)
@@ -27,7 +26,6 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   user_id uuid REFERENCES auth.users NOT NULL,
   name text NOT NULL,
   price numeric NOT NULL,
-  currency text NOT NULL DEFAULT 'USD',
   billing_cycle text NOT NULL,
   start_date date NOT NULL,
   next_billing date NOT NULL,

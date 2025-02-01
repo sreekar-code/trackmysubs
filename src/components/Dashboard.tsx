@@ -8,15 +8,12 @@ import SubscriptionList from './dashboard/SubscriptionList';
 import SubscriptionModal from './dashboard/SubscriptionModal';
 import CategoryManagement from './dashboard/CategoryManagement';
 import SubscriptionFilters from './dashboard/SubscriptionFilters';
-import { useCurrency } from '../contexts/CurrencyContext';
-import { currencyService } from '../services/currencyService';
 
 interface Subscription {
   id: string;
   user_id: string;
   name: string;
   price: number;
-  currency: string;
   billing_cycle: string;
   start_date: string;
   next_billing: string;
@@ -32,19 +29,18 @@ interface Category {
   is_default: boolean;
 }
 
-// Add exchange rates (you would typically get these from an API)
-const exchangeRates: { [key: string]: number } = {
-  USD: 1,
-  EUR: 1.08,
-  GBP: 1.27,
-  JPY: 0.0067,
-  AUD: 0.66,
-  CAD: 0.74,
-  INR: 0.012,
+const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
+  switch (billingCycle) {
+    case 'Yearly':
+      return price / 12;
+    case 'Quarterly':
+      return price / 3;
+    default:
+      return price;
+  }
 };
 
 const Dashboard: React.FC = () => {
-  const { currency: displayCurrency } = useCurrency();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -58,50 +54,19 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showRenewingSoon, setShowRenewingSoon] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
-  const [totalMonthlySpend, setTotalMonthlySpend] = useState(0);
   const [subscriptionForm, setSubscriptionForm] = useState({
     name: '',
     price: '',
-    currency: displayCurrency,
     billing_cycle: 'Monthly',
     start_date: '',
     next_billing: '',
     category_id: ''
   });
 
-  const convertAmount = (amount: number, fromCurrency: string, toCurrency: string): number => {
-    if (fromCurrency === toCurrency) return amount;
-    const inUSD = amount / exchangeRates[fromCurrency];
-    return inUSD * exchangeRates[toCurrency];
-  };
-
-  const calculateMonthlyPrice = async (price: number, billingCycle: string, fromCurrency: string): Promise<number> => {
-    const monthlyPrice = (() => {
-      switch (billingCycle) {
-        case 'Yearly':
-          return price / 12;
-        case 'Quarterly':
-          return price / 3;
-        default:
-          return price;
-      }
-    })();
-
-    return await currencyService.convertAmount(monthlyPrice, fromCurrency, displayCurrency);
-  };
-
-  useEffect(() => {
-    const updateTotalSpend = async () => {
-      let total = 0;
-      for (const sub of subscriptions) {
-        const monthlyPrice = await calculateMonthlyPrice(sub.price, sub.billing_cycle, sub.currency);
-        total += monthlyPrice;
-      }
-      setTotalMonthlySpend(total);
-    };
-
-    updateTotalSpend();
-  }, [subscriptions, displayCurrency]);
+  const totalMonthlySpend = subscriptions.reduce(
+    (acc, sub) => acc + calculateMonthlyPrice(sub.price, sub.billing_cycle),
+    0
+  );
 
   const fetchData = async (retryCount = 0) => {
     console.log('🔄 Fetching data...');
@@ -242,7 +207,6 @@ const Dashboard: React.FC = () => {
     setSubscriptionForm({
       name: subscription.name,
       price: subscription.price.toString(),
-      currency: subscription.currency,
       billing_cycle: subscription.billing_cycle,
       start_date: subscription.start_date,
       next_billing: subscription.next_billing,
@@ -310,7 +274,6 @@ const Dashboard: React.FC = () => {
           setSubscriptionForm({
             name: '',
             price: '',
-            currency: displayCurrency,
             billing_cycle: 'Monthly',
             start_date: '',
             next_billing: '',
@@ -369,7 +332,6 @@ const Dashboard: React.FC = () => {
                     setSubscriptionForm({
                       name: '',
                       price: '',
-                      currency: displayCurrency,
                       billing_cycle: 'Monthly',
                       start_date: '',
                       next_billing: '',

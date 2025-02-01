@@ -56,7 +56,7 @@ const Analytics: React.FC = () => {
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false });
 
   useEffect(() => {
     const handleResize = () => {
@@ -362,9 +362,26 @@ const Analytics: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
+                            const viewportHeight = window.innerHeight;
+                            const viewportWidth = window.innerWidth;
+                            
+                            // Calculate space above and below the clicked event
+                            const spaceAbove = rect.top;
+                            const spaceBelow = viewportHeight - rect.bottom;
+                            
+                            // Calculate if popup should appear above or below
+                            const showAbove = spaceAbove > spaceBelow;
+                            
+                            // Calculate horizontal position to ensure popup stays in viewport
+                            let left = rect.left;
+                            if (left + 280 > viewportWidth) { // 280 is popup width
+                              left = viewportWidth - 290; // 10px margin from edge
+                            }
+                            
                             setPopupPosition({
-                              top: rect.top + window.scrollY - 10,
-                              left: rect.left + window.scrollX
+                              top: showAbove ? rect.top + window.scrollY : rect.bottom + window.scrollY,
+                              left: Math.max(10, left + window.scrollX),
+                              showAbove
                             });
                             setSelectedSubscription(arg.event.extendedProps.subscription);
                           }}
@@ -390,18 +407,22 @@ const Analytics: React.FC = () => {
                       onClick={() => setSelectedSubscription(null)}
                     />
                     <div
-                      className="absolute z-50 bg-white rounded-lg shadow-lg p-4 w-[280px]"
+                      className="fixed z-50 bg-white rounded-lg shadow-lg p-4 w-[280px]"
                       style={{
-                        top: `${popupPosition.top}px`,
+                        top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
+                        bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
-                        transform: 'translateY(-100%)'
+                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)'
                       }}
                     >
                       <div className="flex flex-col space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-gray-900">{selectedSubscription.name}</h4>
                           <button
-                            onClick={() => setSelectedSubscription(null)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSubscription(null);
+                            }}
                             className="text-gray-400 hover:text-gray-600 p-1"
                           >
                             ×

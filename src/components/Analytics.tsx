@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { BarChart, LineChart, PieChart, Calendar, Clock, LayoutDashboard } from 'lucide-react';
 import { Line, Bar, Pie } from 'react-chartjs-2';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from '../lib/auth';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -51,6 +53,8 @@ const Analytics: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('graphs');
   const { formatAmount, currency } = useCurrency();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const navigate = useNavigate();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -149,6 +153,15 @@ const Analytics: React.FC = () => {
       monthlyPrice: calculateMonthlyPrice(sub.price, sub.billing_cycle),
     }));
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -163,11 +176,11 @@ const Analytics: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
-        onAddNew={() => {}}
-        onSignOut={async () => {}}
-        showMobileMenu={false}
-        setShowMobileMenu={() => {}}
-        onManageCategories={() => {}}
+        onAddNew={() => navigate('/')}
+        onSignOut={handleSignOut}
+        showMobileMenu={showMobileMenu}
+        setShowMobileMenu={setShowMobileMenu}
+        onManageCategories={() => navigate('/')}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">

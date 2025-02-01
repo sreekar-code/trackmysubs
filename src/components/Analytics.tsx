@@ -285,10 +285,8 @@ const Analytics: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <div className="mb-4">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Monthly Spend by Category ({currency})
-                      </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base sm:text-lg font-semibold">Monthly Spend by Category ({currency})</h3>
                     </div>
                     <div className="h-[300px] sm:h-[400px]">
                       <Bar

@@ -44,6 +44,7 @@ const exchangeRates: { [key: string]: number } = {
 };
 
 const Dashboard: React.FC = () => {
+  const { currency: displayCurrency } = useCurrency();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -61,13 +62,12 @@ const Dashboard: React.FC = () => {
   const [subscriptionForm, setSubscriptionForm] = useState({
     name: '',
     price: '',
-    currency: '',
+    currency: displayCurrency,
     billing_cycle: 'Monthly',
     start_date: '',
     next_billing: '',
     category_id: ''
   });
-  const { currency: displayCurrency } = useCurrency();
 
   const convertAmount = (amount: number, fromCurrency: string, toCurrency: string): number => {
     if (fromCurrency === toCurrency) return amount;
@@ -310,7 +310,7 @@ const Dashboard: React.FC = () => {
           setSubscriptionForm({
             name: '',
             price: '',
-            currency: '',
+            currency: displayCurrency,
             billing_cycle: 'Monthly',
             start_date: '',
             next_billing: '',
@@ -369,7 +369,7 @@ const Dashboard: React.FC = () => {
                     setSubscriptionForm({
                       name: '',
                       price: '',
-                      currency: '',
+                      currency: displayCurrency,
                       billing_cycle: 'Monthly',
                       start_date: '',
                       next_billing: '',

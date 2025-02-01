@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Tag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useCurrency, currencies } from '../../contexts/CurrencyContext';
@@ -44,6 +44,16 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const { currency } = useCurrency();
+
+  // Initialize currency if it's empty
+  useEffect(() => {
+    if (!subscriptionForm.currency) {
+      setSubscriptionForm(prev => ({
+        ...prev,
+        currency: currency
+      }));
+    }
+  }, [currency, subscriptionForm.currency, setSubscriptionForm]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -243,13 +253,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500 sm:text-sm">
-                    {currencies[subscriptionForm.currency as keyof typeof currencies].symbol}
+                    {currencies[subscriptionForm.currency || currency as keyof typeof currencies].symbol}
                   </span>
                 </div>
               </div>
               <select
                 name="currency"
-                value={subscriptionForm.currency}
+                value={subscriptionForm.currency || currency}
                 onChange={handleInputChange}
                 className="flex-none w-24 inline-flex items-center px-3 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm"
               >

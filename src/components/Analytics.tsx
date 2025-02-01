@@ -286,7 +286,20 @@ const Analytics: React.FC = () => {
                 <>
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-base sm:text-lg font-semibold">Monthly Spend by Category ({currency})</h3>
+                      <div className="flex items-center space-x-3">
+                        <h3 className="text-base sm:text-lg font-semibold">Monthly Spend by Category</h3>
+                        <select
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
+                          className="text-sm border border-gray-300 rounded-md py-1 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
+                          {Object.entries(currencies).map(([code, { name }]) => (
+                            <option key={code} value={code}>
+                              {code}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div className="h-[300px] sm:h-[400px]">
                       <Bar

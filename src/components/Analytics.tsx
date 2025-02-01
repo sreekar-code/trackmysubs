@@ -143,9 +143,7 @@ const Analytics: React.FC = () => {
   const calendarEvents = subscriptions.map(sub => ({
     title: sub.name,
     date: sub.next_billing,
-    backgroundColor: sub.category?.name === 'Streaming' ? '#3B82F6' :
-                    sub.category?.name === 'Software' ? '#EF4444' :
-                    '#10B981',
+    backgroundColor: '#3B82F6',
     extendedProps: {
       subscription: sub
     }
@@ -445,12 +443,7 @@ const Analytics: React.FC = () => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-gray-500">Category</span>
-                            <span className={`
-                              font-medium px-2 py-1 rounded-full text-sm
-                              ${selectedSubscription.category?.name === 'Streaming' ? 'bg-blue-100 text-blue-700' :
-                                selectedSubscription.category?.name === 'Software' ? 'bg-red-100 text-red-700' :
-                                'bg-emerald-100 text-emerald-700'}
-                            `}>
+                            <span className="font-medium text-gray-900">
                               {selectedSubscription.category?.name || 'Uncategorized'}
                             </span>
                           </div>

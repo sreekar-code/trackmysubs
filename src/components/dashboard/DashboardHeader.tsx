@@ -1,6 +1,5 @@
 import React from 'react';
 import { CreditCard, Plus, LogOut, Menu, BarChart } from 'lucide-react';
-import CurrencySelector from '../CurrencySelector';
 import { Link, useLocation } from 'react-router-dom';
 
 interface DashboardHeaderProps {
@@ -56,9 +55,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="hidden sm:flex items-center">
-              <CurrencySelector />
-            </div>
             {!isAnalyticsPage && (
               <button 
                 onClick={onAddNew}
@@ -87,7 +83,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {showMobileMenu && (
           <div className="sm:hidden mt-4 pb-2 border-t border-gray-200">
             <div className="pt-4 space-y-4">
-              <CurrencySelector />
               <Link
                 to="/"
                 className={`flex items-center space-x-2 w-full px-4 py-2 text-left ${

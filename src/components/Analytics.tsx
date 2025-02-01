@@ -71,9 +71,15 @@ const Analytics: React.FC = () => {
             category:subscription_categories(name)
           `)
           .order('next_billing', { ascending: true });
-
         if (error) throw error;
-        setSubscriptions(data || []);
+        setSubscriptions(data?.map((subscription: any) => ({
+          id: subscription.id,
+          name: subscription.name,
+          price: subscription.price,
+          billing_cycle: subscription.billing_cycle,
+          next_billing: subscription.next_billing,
+          category: subscription.category
+        })) || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load subscriptions');
       } finally {
@@ -300,25 +306,53 @@ const Analytics: React.FC = () => {
           {activeView === 'calendar' && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Calendar</h3>
-              <div className="bg-white rounded-lg -mx-4 sm:mx-0">
-                <FullCalendar
-                  plugins={[dayGridPlugin]}
-                  initialView="dayGridMonth"
-                  events={calendarEvents}
-                  height="auto"
-                  headerToolbar={{
-                    left: isMobile ? 'prev,next' : 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                  }}
-                  dayMaxEvents={isMobile ? 2 : true}
-                  eventDisplay={isMobile ? 'block' : 'auto'}
-                  views={{
-                    dayGridMonth: {
-                      titleFormat: { year: 'numeric', month: 'short' }
-                    }
-                  }}
-                />
+              <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto">
+                <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
+                  <FullCalendar
+                    plugins={[dayGridPlugin]}
+                    initialView="dayGridMonth"
+                    events={calendarEvents}
+                    height="auto"
+                    headerToolbar={{
+                      left: isMobile ? 'prev,next' : 'prev,next today',
+                      center: 'title',
+                      right: 'dayGridMonth'
+                    }}
+                    dayMaxEvents={isMobile ? 2 : true}
+                    eventDisplay={isMobile ? 'block' : 'auto'}
+                    views={{
+                      dayGridMonth: {
+                        titleFormat: { 
+                          year: 'numeric', 
+                          month: isMobile ? 'short' : 'long'
+                        },
+                        dayHeaderFormat: { 
+                          weekday: isMobile ? 'narrow' : 'short' 
+                        },
+                        eventMinHeight: isMobile ? 20 : 25,
+                        eventShortHeight: isMobile ? 30 : 40,
+                      }
+                    }}
+                    eventTimeFormat={{
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      meridiem: 'short'
+                    }}
+                    eventContent={(arg) => {
+                      return (
+                        <div className={`p-1 ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>
+                          {arg.event.title}
+                        </div>
+                      )
+                    }}
+                    dayHeaderClassNames={isMobile ? 'text-xs py-1' : 'py-2'}
+                    dayCellClassNames={isMobile ? 'text-xs' : 'text-sm'}
+                    eventClassNames="rounded-md shadow-sm"
+                    contentHeight={isMobile ? "auto" : 600}
+                    handleWindowResize={true}
+                    stickyHeaderDates={true}
+                  />
+                </div>
               </div>
             </div>
           )}

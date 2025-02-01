@@ -58,7 +58,7 @@ const Analytics: React.FC = () => {
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false });
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false, showLeft: false });
   const [convertedAmounts, setConvertedAmounts] = useState<{ [key: string]: number }>({});
   const [isConverting, setIsConverting] = useState(false);
 
@@ -209,52 +209,66 @@ const Analytics: React.FC = () => {
     }
   };
 
-  const calculatePopupPosition = (rect: DOMRect): { top: number; left: number; showAbove: boolean } => {
+  const calculatePopupPosition = (rect: DOMRect): { top: number; left: number; showAbove: boolean; showLeft: boolean } => {
     const POPUP_WIDTH = 320;
-    const POPUP_HEIGHT = 200; // Approximate height of popup
-    const MARGIN = 10; // Margin from edges
+    const POPUP_HEIGHT = 200;
+    const MARGIN = 10;
     
+    // Get calendar container dimensions
+    const calendarContainer = document.querySelector('.fc-view-harness');
+    if (!calendarContainer) return { top: 0, left: 0, showAbove: false, showLeft: false };
+    
+    const containerRect = calendarContainer.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const scrollY = window.scrollY;
     const scrollX = window.scrollX;
 
-    // Calculate available space in different directions
-    const spaceAbove = rect.top;
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceLeft = rect.left;
-    const spaceRight = viewportWidth - rect.right;
+    // Calculate available space in all directions
+    const spaceAbove = rect.top - containerRect.top;
+    const spaceBelow = containerRect.bottom - rect.bottom;
+    const spaceLeft = rect.left - containerRect.left;
+    const spaceRight = containerRect.right - rect.right;
 
     // Determine vertical position
     let showAbove = spaceBelow < POPUP_HEIGHT && spaceAbove > spaceBelow;
     let top = showAbove ? rect.top + scrollY - MARGIN : rect.bottom + scrollY + MARGIN;
 
     // Determine horizontal position
-    let left = rect.left + scrollX;
+    let showLeft = spaceRight < POPUP_WIDTH && spaceLeft > spaceRight;
+    let left = showLeft ? rect.left + scrollX - POPUP_WIDTH + rect.width : rect.left + scrollX;
 
-    // Adjust horizontal position if popup would overflow right edge
-    if (left + POPUP_WIDTH > viewportWidth - MARGIN) {
-      left = viewportWidth - POPUP_WIDTH - MARGIN;
+    // Adjust for right edge
+    if (left + POPUP_WIDTH > containerRect.right + scrollX) {
+      left = containerRect.right + scrollX - POPUP_WIDTH - MARGIN;
     }
 
-    // Adjust horizontal position if popup would overflow left edge
-    if (left < MARGIN) {
-      left = MARGIN;
+    // Adjust for left edge
+    if (left < containerRect.left + scrollX) {
+      left = containerRect.left + scrollX + MARGIN;
     }
 
-    // If showing above, ensure it doesn't go off the top of the viewport
-    if (showAbove && top - POPUP_HEIGHT < MARGIN) {
+    // Adjust for top edge
+    if (showAbove && top - POPUP_HEIGHT < containerRect.top + scrollY) {
       showAbove = false;
       top = rect.bottom + scrollY + MARGIN;
     }
 
-    // If showing below, ensure it doesn't go off the bottom of the viewport
-    if (!showAbove && top + POPUP_HEIGHT > viewportHeight + scrollY - MARGIN) {
+    // Adjust for bottom edge
+    if (!showAbove && top + POPUP_HEIGHT > containerRect.bottom + scrollY) {
       showAbove = true;
-      top = rect.top + scrollY - MARGIN;
+      top = rect.top + scrollY - POPUP_HEIGHT - MARGIN;
     }
 
-    return { top, left, showAbove };
+    // Final viewport boundary checks
+    if (top < scrollY + MARGIN) {
+      top = scrollY + MARGIN;
+    }
+    if (top + POPUP_HEIGHT > scrollY + viewportHeight - MARGIN) {
+      top = scrollY + viewportHeight - POPUP_HEIGHT - MARGIN;
+    }
+
+    return { top, left, showAbove, showLeft };
   };
 
   if (loading) {
@@ -467,7 +481,8 @@ const Analytics: React.FC = () => {
                             setPopupPosition({
                               top: position.top,
                               left: position.left,
-                              showAbove: position.showAbove
+                              showAbove: position.showAbove,
+                              showLeft: position.showLeft
                             });
                             setSelectedSubscription(arg.event.extendedProps.subscription);
                           }}
@@ -502,7 +517,7 @@ const Analytics: React.FC = () => {
                         top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
                         bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
-                        transform: `translate3d(0, ${popupPosition.showAbove ? '-10px' : '10px'}, 0)`,
+                        transform: `translate3d(${popupPosition.showLeft ? '10px' : '-10px'}, ${popupPosition.showAbove ? '-10px' : '10px'}, 0)`,
                         opacity: selectedSubscription ? 1 : 0,
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}

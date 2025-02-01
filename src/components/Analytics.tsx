@@ -209,6 +209,27 @@ const Analytics: React.FC = () => {
     }
   };
 
+  // Add scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (selectedSubscription) {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const scrollY = window.scrollY;
+        
+        // Update popup position based on current scroll position
+        setPopupPosition(prev => ({
+          ...prev,
+          top: prev.showAbove ? Math.max(10, prev.top - scrollY) : Math.min(viewportHeight - 10, prev.top + scrollY),
+          left: Math.max(10, Math.min(viewportWidth - 290, prev.left))
+        }));
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedSubscription]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -278,6 +299,19 @@ const Analytics: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
           {activeView === 'graphs' && (
             <div className="space-y-6 sm:space-y-8">
+              <div className="flex items-center justify-end">
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-md py-1 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  {Object.entries(currencies).map(([code, { name }]) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+              </div>
               {isConverting ? (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -285,22 +319,7 @@ const Analytics: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <h3 className="text-base sm:text-lg font-semibold">Monthly Spend by Category</h3>
-                        <select
-                          value={currency}
-                          onChange={(e) => setCurrency(e.target.value)}
-                          className="text-sm border border-gray-300 rounded-md py-1 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
-                        >
-                          {Object.entries(currencies).map(([code, { name }]) => (
-                            <option key={code} value={code}>
-                              {code}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold mb-4">Monthly Spend by Category</h3>
                     <div className="h-[300px] sm:h-[400px]">
                       <Bar
                         data={monthlySpendData}
@@ -430,18 +449,18 @@ const Analytics: React.FC = () => {
                             const viewportHeight = window.innerHeight;
                             const viewportWidth = window.innerWidth;
                             
+                            // Calculate available space above and below
                             const spaceAbove = rect.top;
                             const spaceBelow = viewportHeight - rect.bottom;
-                            const showAbove = spaceAbove > spaceBelow;
+                            const showAbove = spaceBelow < 200 && spaceAbove > spaceBelow; // Show above if there's less than 200px below
                             
-                            let left = rect.left;
-                            if (left + 280 > viewportWidth) {
-                              left = viewportWidth - 290;
-                            }
+                            // Calculate optimal position
+                            let top = showAbove ? rect.top - 10 : rect.bottom + 10;
+                            let left = Math.max(10, Math.min(viewportWidth - 290, rect.left));
                             
                             setPopupPosition({
-                              top: showAbove ? rect.top + window.scrollY : rect.bottom + window.scrollY,
-                              left: Math.max(10, left + window.scrollX),
+                              top,
+                              left,
                               showAbove
                             });
                             setSelectedSubscription(arg.event.extendedProps.subscription);
@@ -473,10 +492,9 @@ const Analytics: React.FC = () => {
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
                       `}
                       style={{
-                        top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
-                        bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
-                        left: `${popupPosition.left}px`,
-                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
+                        top: popupPosition.top,
+                        left: popupPosition.left,
+                        transform: 'translate(0, 0)',
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}
                     >

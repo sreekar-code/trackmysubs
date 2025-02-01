@@ -8,6 +8,8 @@ import SubscriptionList from './dashboard/SubscriptionList';
 import SubscriptionModal from './dashboard/SubscriptionModal';
 import CategoryManagement from './dashboard/CategoryManagement';
 import SubscriptionFilters from './dashboard/SubscriptionFilters';
+import { convertCurrency } from '../lib/currency';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Subscription {
   id: string;
@@ -18,6 +20,7 @@ interface Subscription {
   start_date: string;
   next_billing: string;
   category_id: string | null;
+  currency: string;
   category?: {
     name: string;
   };
@@ -62,6 +65,8 @@ const Dashboard: React.FC = () => {
     next_billing: '',
     category_id: ''
   });
+  const [convertedTotalSpend, setConvertedTotalSpend] = useState<number | null>(null);
+  const { currency: displayCurrency } = useCurrency();
 
   const totalMonthlySpend = subscriptions.reduce(
     (acc, sub) => acc + calculateMonthlyPrice(sub.price, sub.billing_cycle),
@@ -195,6 +200,33 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const calculateTotalSpend = async () => {
+      try {
+        const monthlyAmounts = await Promise.all(
+          subscriptions.map(async (sub) => {
+            const monthlyPrice = calculateMonthlyPrice(sub.price, sub.billing_cycle);
+            return convertCurrency(monthlyPrice, sub.currency || 'USD', displayCurrency);
+          })
+        );
+        
+        const total = monthlyAmounts.reduce((acc, amount) => acc + amount, 0);
+        setConvertedTotalSpend(total);
+      } catch (error) {
+        console.error('Error calculating total spend:', error);
+        setError('Failed to convert currencies. Using original values.');
+        // Fallback to unconverted values
+        const total = subscriptions.reduce(
+          (acc, sub) => acc + calculateMonthlyPrice(sub.price, sub.billing_cycle),
+          0
+        );
+        setConvertedTotalSpend(total);
+      }
+    };
+
+    calculateTotalSpend();
+  }, [subscriptions, displayCurrency]);
+
   const handleSignOut = async () => {
     try {
       setLoading(true);
@@ -291,7 +323,7 @@ const Dashboard: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <DashboardStats
-          totalMonthlySpend={totalMonthlySpend}
+          totalMonthlySpend={convertedTotalSpend || 0}
           subscriptionCount={subscriptions.length}
         />
 

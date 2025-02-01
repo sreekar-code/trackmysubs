@@ -16,6 +16,7 @@ interface SubscriptionFormData {
   start_date: string;
   next_billing: string;
   category_id: string;
+  currency: string;
 }
 
 interface SubscriptionModalProps {
@@ -42,8 +43,19 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [modalError, setModalError] = useState<string | null>(null);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const { currency } = useCurrency();
-  const currencySymbol = currencies[currency as keyof typeof currencies].symbol;
+  const { currency: displayCurrency } = useCurrency();
+  const currencySymbol = currencies[displayCurrency as keyof typeof currencies].symbol;
+
+  // Add supported currencies
+  const supportedCurrencies = {
+    USD: { symbol: '$', name: 'US Dollar' },
+    EUR: { symbol: '€', name: 'Euro' },
+    GBP: { symbol: '£', name: 'British Pound' },
+    INR: { symbol: '₹', name: 'Indian Rupee' },
+    JPY: { symbol: '¥', name: 'Japanese Yen' },
+    AUD: { symbol: 'A$', name: 'Australian Dollar' },
+    CAD: { symbol: 'C$', name: 'Canadian Dollar' },
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -137,7 +149,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         billing_cycle: subscriptionForm.billing_cycle,
         start_date: subscriptionForm.start_date,
         next_billing: subscriptionForm.next_billing,
-        category_id: subscriptionForm.category_id || null
+        category_id: subscriptionForm.category_id || null,
+        currency: subscriptionForm.currency || 'USD'
       };
 
       let error;
@@ -161,7 +174,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         billing_cycle: 'Monthly',
         start_date: '',
         next_billing: '',
-        category_id: ''
+        category_id: '',
+        currency: 'USD'
       });
       setShowModal(false);
       setEditingSubscription(null);
@@ -226,21 +240,37 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <label htmlFor="price" className="block text-sm font-medium text-gray-700">
               Price
             </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">{currencySymbol}</span>
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <div className="relative flex-grow">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">
+                    {supportedCurrencies[subscriptionForm.currency || 'USD'].symbol}
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  name="price"
+                  id="price"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={subscriptionForm.price}
+                  onChange={handleInputChange}
+                  className="block w-full pl-7 pr-12 border border-gray-300 rounded-none rounded-l-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
               </div>
-              <input
-                type="number"
-                name="price"
-                id="price"
-                required
-                min="0"
-                step="0.01"
-                value={subscriptionForm.price}
+              <select
+                name="currency"
+                value={subscriptionForm.currency || 'USD'}
                 onChange={handleInputChange}
-                className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
+                className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"
+              >
+                {Object.entries(supportedCurrencies).map(([code, { name }]) => (
+                  <option key={code} value={code}>
+                    {code} - {name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

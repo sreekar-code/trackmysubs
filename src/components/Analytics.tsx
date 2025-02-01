@@ -19,7 +19,6 @@ import {
 } from 'chart.js';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import DashboardHeader from './dashboard/DashboardHeader';
 
 ChartJS.register(
@@ -140,11 +139,16 @@ const Analytics: React.FC = () => {
   };
 
   const calendarEvents = subscriptions.map(sub => ({
-    title: isMobile ? sub.name : `${sub.name} (${formatAmount(sub.price)})`,
+    title: sub.name,
     date: sub.next_billing,
     backgroundColor: sub.category?.name === 'Streaming' ? '#3B82F6' :
                     sub.category?.name === 'Software' ? '#EF4444' :
                     '#10B981',
+    extendedProps: {
+      price: formatAmount(sub.price),
+      category: sub.category?.name || 'Uncategorized',
+      billingCycle: sub.billing_cycle
+    }
   }));
 
   const timelineEvents = [...subscriptions]
@@ -323,17 +327,17 @@ const Analytics: React.FC = () => {
               <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
-                    plugins={[dayGridPlugin, timeGridPlugin]}
-                    initialView={isMobile ? 'timeGridWeek' : 'dayGridMonth'}
+                    plugins={[dayGridPlugin]}
+                    initialView="dayGridMonth"
                     events={calendarEvents}
                     height="auto"
                     headerToolbar={{
                       left: 'prev,next',
                       center: 'title',
-                      right: isMobile ? 'timeGridWeek,dayGridMonth' : 'dayGridMonth,timeGridWeek'
+                      right: 'dayGridMonth'
                     }}
                     dayMaxEvents={isMobile ? 2 : true}
-                    eventDisplay={isMobile ? 'block' : 'auto'}
+                    eventDisplay="block"
                     views={{
                       dayGridMonth: {
                         titleFormat: { 
@@ -345,42 +349,32 @@ const Analytics: React.FC = () => {
                         },
                         eventMinHeight: isMobile ? 20 : 25,
                         eventShortHeight: isMobile ? 30 : 40,
-                      },
-                      timeGridWeek: {
-                        titleFormat: { 
-                          year: 'numeric', 
-                          month: 'short',
-                          day: '2-digit'
-                        },
-                        dayHeaderFormat: { 
-                          weekday: isMobile ? 'narrow' : 'short',
-                          month: 'numeric',
-                          day: 'numeric',
-                          omitCommas: true
-                        },
-                        slotMinTime: '00:00:00',
-                        slotMaxTime: '24:00:00',
-                        allDaySlot: true,
-                        allDayText: 'All Day',
-                        slotDuration: '24:00:00',
-                        expandRows: true
                       }
                     }}
-                    eventTimeFormat={{
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      meridiem: 'short'
-                    }}
                     eventContent={(arg) => {
+                      const event = arg.event;
                       return (
-                        <div className={`p-1 ${isMobile ? 'text-xs' : 'text-sm'} truncate text-gray-700`}>
-                          {arg.event.title}
+                        <div 
+                          className={`
+                            p-2 rounded-md cursor-pointer
+                            ${isMobile ? 'text-xs' : 'text-sm'} 
+                            text-gray-700 hover:opacity-90 transition-opacity
+                            flex items-center justify-between
+                          `}
+                          title={`
+                            ${event.title}
+                            Price: ${event.extendedProps.price}
+                            Category: ${event.extendedProps.category}
+                            Billing: ${event.extendedProps.billingCycle}
+                          `}
+                        >
+                          <span className="truncate">{event.title}</span>
                         </div>
                       )
                     }}
                     dayHeaderClassNames={isMobile ? 'text-xs py-1' : 'py-2'}
                     dayCellClassNames={isMobile ? 'text-xs' : 'text-sm'}
-                    eventClassNames="rounded-md shadow-sm"
+                    eventClassNames="rounded-md shadow-sm hover:shadow-md transition-shadow"
                     contentHeight={isMobile ? "auto" : 600}
                     handleWindowResize={true}
                     stickyHeaderDates={true}

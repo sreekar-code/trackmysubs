@@ -364,38 +364,18 @@ const Analytics: React.FC = () => {
                             const rect = e.currentTarget.getBoundingClientRect();
                             const viewportHeight = window.innerHeight;
                             const viewportWidth = window.innerWidth;
-                            const calendarRect = e.currentTarget.closest('.fc-view-harness')?.getBoundingClientRect();
                             
-                            // Calculate available spaces
+                            // Calculate space above and below the clicked event
                             const spaceAbove = rect.top;
                             const spaceBelow = viewportHeight - rect.bottom;
-                            const spaceLeft = rect.left;
-                            const spaceRight = viewportWidth - rect.right;
                             
+                            // Calculate if popup should appear above or below
+                            const showAbove = spaceAbove > spaceBelow;
+                            
+                            // Calculate horizontal position to ensure popup stays in viewport
                             let left = rect.left;
-                            let showAbove = spaceAbove > spaceBelow;
-                            
-                            if (!isMobile) {
-                              // For desktop: prefer right side if space available
-                              if (spaceRight >= 340) { // 320px width + 20px margin
-                                left = rect.right + 10;
-                                showAbove = false; // Reset vertical position when showing on right
-                              } else if (spaceLeft >= 340) {
-                                left = rect.left - 330; // 320px width + 10px margin
-                                showAbove = false;
-                              } else {
-                                // If can't show on sides, optimize vertical position
-                                left = Math.min(
-                                  Math.max(10, rect.left - 160), // Don't go off left edge
-                                  viewportWidth - 330 // Don't go off right edge
-                                );
-                                showAbove = spaceAbove > spaceBelow;
-                              }
-                            } else {
-                              // Mobile positioning logic
-                              if (left + 280 > viewportWidth) {
-                                left = viewportWidth - 290;
-                              }
+                            if (left + 280 > viewportWidth) { // 280 is popup width
+                              left = viewportWidth - 290; // 10px margin from edge
                             }
                             
                             setPopupPosition({
@@ -431,7 +411,6 @@ const Analytics: React.FC = () => {
                         fixed z-50 bg-white rounded-lg shadow-lg
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
                         backdrop-blur-sm bg-white/95
-                        transition-all duration-200 ease-out
                       `}
                       style={{
                         top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,

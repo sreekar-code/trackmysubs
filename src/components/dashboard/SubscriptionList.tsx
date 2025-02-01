@@ -24,6 +24,7 @@ interface SubscriptionListProps {
   selectedBillingCycle: string;
   searchQuery: string;
   showRenewingSoon: boolean;
+  showExpired: boolean;
 }
 
 const SubscriptionList: React.FC<SubscriptionListProps> = ({
@@ -34,6 +35,7 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
   selectedBillingCycle,
   searchQuery,
   showRenewingSoon,
+  showExpired,
 }) => {
   const { formatAmount } = useCurrency();
 
@@ -69,8 +71,10 @@ const SubscriptionList: React.FC<SubscriptionListProps> = ({
       subscription.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (subscription.category?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRenewingSoon = !showRenewingSoon || isExpiringSoon(subscription.next_billing);
+    const matchesExpired = !showExpired || isExpired(subscription.next_billing);
 
-    return matchesCategory && matchesBillingCycle && matchesSearch && matchesRenewingSoon;
+    return matchesCategory && matchesBillingCycle && matchesSearch && 
+           ((!showRenewingSoon && !showExpired) || matchesRenewingSoon || matchesExpired);
   });
 
   if (filteredSubscriptions.length === 0) {

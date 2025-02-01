@@ -18,6 +18,8 @@ interface SubscriptionFiltersProps {
   onManageCategories: () => void;
   showRenewingSoon: boolean;
   setShowRenewingSoon: (show: boolean) => void;
+  showExpired: boolean;
+  setShowExpired: (show: boolean) => void;
 }
 
 const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
@@ -31,6 +33,8 @@ const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   onManageCategories,
   showRenewingSoon,
   setShowRenewingSoon,
+  showExpired,
+  setShowExpired,
 }) => {
   const sortedCategories = [...categories].sort((a, b) => {
     if (a.name === 'Other') return 1;
@@ -102,18 +106,30 @@ const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
           </div>
         </div>
 
-        {/* Renew Soon Toggle */}
-        <div className="flex items-center">
+        {/* Status Filters */}
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowRenewingSoon(!showRenewingSoon)}
-            className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 w-full sm:w-auto justify-center ${
+            className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
               showRenewingSoon
-                ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
                 : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <Clock className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${showRenewingSoon ? 'text-blue-500' : 'text-gray-400'}`} />
+            <Clock className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${showRenewingSoon ? 'text-yellow-500' : 'text-gray-400'}`} />
             Renew Soon
+          </button>
+
+          <button
+            onClick={() => setShowExpired(!showExpired)}
+            className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+              showExpired
+                ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Clock className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${showExpired ? 'text-red-500' : 'text-gray-400'}`} />
+            Expired
           </button>
         </div>
       </div>

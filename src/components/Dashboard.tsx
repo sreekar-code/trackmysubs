@@ -53,6 +53,7 @@ const Dashboard: React.FC = () => {
   const [selectedBillingCycle, setSelectedBillingCycle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showRenewingSoon, setShowRenewingSoon] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
   const [subscriptionForm, setSubscriptionForm] = useState({
     name: '',
     price: '',
@@ -304,6 +305,8 @@ const Dashboard: React.FC = () => {
             onManageCategories={() => setShowCategoryManagement(true)}
             showRenewingSoon={showRenewingSoon}
             setShowRenewingSoon={setShowRenewingSoon}
+            showExpired={showExpired}
+            setShowExpired={setShowExpired}
           />
 
           {subscriptions.length > 0 ? (
@@ -316,6 +319,7 @@ const Dashboard: React.FC = () => {
                 selectedBillingCycle={selectedBillingCycle}
                 searchQuery={searchQuery}
                 showRenewingSoon={showRenewingSoon}
+                showExpired={showExpired}
               />
             </div>
           ) : (

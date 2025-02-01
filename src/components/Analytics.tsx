@@ -58,7 +58,7 @@ const Analytics: React.FC = () => {
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false, showLeft: false });
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false });
   const [convertedAmounts, setConvertedAmounts] = useState<{ [key: string]: number }>({});
   const [isConverting, setIsConverting] = useState(false);
 
@@ -207,102 +207,6 @@ const Analytics: React.FC = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
-
-  const calculatePopupPosition = (rect: DOMRect): { top: number; left: number; showAbove: boolean; showLeft: boolean } => {
-    const POPUP_WIDTH = 320;
-    const POPUP_HEIGHT = 200;
-    const MARGIN = 16;
-    
-    // Get calendar container dimensions
-    const calendarContainer = document.querySelector('.fc-view-harness');
-    if (!calendarContainer) return { top: 0, left: 0, showAbove: false, showLeft: false };
-    
-    const containerRect = calendarContainer.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
-
-    // Calculate available space in all directions
-    const spaceAbove = rect.top - Math.max(containerRect.top, 0);
-    const spaceBelow = Math.min(containerRect.bottom, viewportHeight) - rect.bottom;
-    const spaceLeft = rect.left - Math.max(containerRect.left, 0);
-    const spaceRight = Math.min(containerRect.right, viewportWidth) - rect.right;
-
-    // Initialize position variables
-    let top: number;
-    let left: number;
-    let showAbove: boolean;
-    let showLeft: boolean;
-
-    // Determine vertical position
-    if (spaceBelow >= POPUP_HEIGHT || spaceBelow > spaceAbove) {
-      // Show below if there's enough space or more space than above
-      showAbove = false;
-      top = rect.bottom + scrollY + MARGIN;
-      
-      // Ensure it doesn't go below viewport
-      if (top + POPUP_HEIGHT > viewportHeight + scrollY) {
-        top = viewportHeight + scrollY - POPUP_HEIGHT - MARGIN;
-      }
-    } else {
-      // Show above
-      showAbove = true;
-      top = rect.top + scrollY - POPUP_HEIGHT - MARGIN;
-      
-      // Ensure it doesn't go above viewport
-      if (top < scrollY) {
-        top = scrollY + MARGIN;
-      }
-    }
-
-    // Determine horizontal position
-    if (spaceRight >= POPUP_WIDTH || spaceRight > spaceLeft) {
-      // Show on right if there's enough space or more space than left
-      showLeft = false;
-      left = rect.left + scrollX;
-      
-      // Ensure it doesn't go beyond right edge
-      if (left + POPUP_WIDTH > viewportWidth + scrollX) {
-        left = viewportWidth + scrollX - POPUP_WIDTH - MARGIN;
-      }
-    } else {
-      // Show on left
-      showLeft = true;
-      left = rect.right + scrollX - POPUP_WIDTH;
-      
-      // Ensure it doesn't go beyond left edge
-      if (left < scrollX) {
-        left = scrollX + MARGIN;
-      }
-    }
-
-    // Additional adjustments for calendar container boundaries
-    // Ensure popup stays within calendar container horizontally
-    if (left < containerRect.left + scrollX) {
-      left = containerRect.left + scrollX + MARGIN;
-    } else if (left + POPUP_WIDTH > containerRect.right + scrollX) {
-      left = containerRect.right + scrollX - POPUP_WIDTH - MARGIN;
-    }
-
-    // If popup would be cut off by top of viewport, show it below instead
-    if (top < scrollY + MARGIN) {
-      showAbove = false;
-      top = rect.bottom + scrollY + MARGIN;
-    }
-
-    // If popup would be cut off by bottom of viewport, show it above instead
-    if (top + POPUP_HEIGHT > viewportHeight + scrollY - MARGIN) {
-      showAbove = true;
-      top = rect.top + scrollY - POPUP_HEIGHT - MARGIN;
-    }
-
-    // Final position adjustments to ensure visibility
-    top = Math.max(scrollY + MARGIN, Math.min(top, viewportHeight + scrollY - POPUP_HEIGHT - MARGIN));
-    left = Math.max(scrollX + MARGIN, Math.min(left, viewportWidth + scrollX - POPUP_WIDTH - MARGIN));
-
-    return { top, left, showAbove, showLeft };
   };
 
   if (loading) {
@@ -510,13 +414,22 @@ const Analytics: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             const rect = e.currentTarget.getBoundingClientRect();
-                            const position = calculatePopupPosition(rect);
+                            const viewportHeight = window.innerHeight;
+                            const viewportWidth = window.innerWidth;
+                            
+                            const spaceAbove = rect.top;
+                            const spaceBelow = viewportHeight - rect.bottom;
+                            const showAbove = spaceAbove > spaceBelow;
+                            
+                            let left = rect.left;
+                            if (left + 280 > viewportWidth) {
+                              left = viewportWidth - 290;
+                            }
                             
                             setPopupPosition({
-                              top: position.top,
-                              left: position.left,
-                              showAbove: position.showAbove,
-                              showLeft: position.showLeft
+                              top: showAbove ? rect.top + window.scrollY : rect.bottom + window.scrollY,
+                              left: Math.max(10, left + window.scrollX),
+                              showAbove
                             });
                             setSelectedSubscription(arg.event.extendedProps.subscription);
                           }}
@@ -534,7 +447,7 @@ const Analytics: React.FC = () => {
                   />
                 </div>
 
-                {/* Subscription Details Popup */}
+                {/* Update Subscription Details Popup */}
                 {selectedSubscription && (
                   <>
                     <div 
@@ -545,13 +458,12 @@ const Analytics: React.FC = () => {
                       className={`
                         fixed z-50 bg-white/95 rounded-lg shadow-lg
                         ${isMobile ? 'w-[280px] p-4' : 'w-[320px] p-5'}
-                        transition-all duration-200 ease-out
                       `}
                       style={{
-                        top: `${popupPosition.top}px`,
+                        top: popupPosition.showAbove ? 'auto' : `${popupPosition.top}px`,
+                        bottom: popupPosition.showAbove ? `${window.innerHeight - popupPosition.top}px` : 'auto',
                         left: `${popupPosition.left}px`,
-                        transform: `translate3d(0, 0, 0)`,
-                        opacity: selectedSubscription ? 1 : 0,
+                        transform: popupPosition.showAbove ? 'translateY(-10px)' : 'translateY(10px)',
                         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
                       }}
                     >

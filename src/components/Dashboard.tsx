@@ -63,7 +63,8 @@ const Dashboard: React.FC = () => {
     billing_cycle: 'Monthly',
     start_date: '',
     next_billing: '',
-    category_id: ''
+    category_id: '',
+    currency: 'USD'
   });
   const [convertedTotalSpend, setConvertedTotalSpend] = useState<number | null>(null);
   const { currency: displayCurrency } = useCurrency();
@@ -244,7 +245,8 @@ const Dashboard: React.FC = () => {
       billing_cycle: subscription.billing_cycle,
       start_date: subscription.start_date,
       next_billing: subscription.next_billing,
-      category_id: subscription.category_id || ''
+      category_id: subscription.category_id || '',
+      currency: subscription.currency || 'USD'
     });
     setShowModal(true);
   };
@@ -311,7 +313,8 @@ const Dashboard: React.FC = () => {
             billing_cycle: 'Monthly',
             start_date: '',
             next_billing: '',
-            category_id: ''
+            category_id: '',
+            currency: 'USD'
           });
           setShowModal(true);
         }}
@@ -369,7 +372,8 @@ const Dashboard: React.FC = () => {
                       billing_cycle: 'Monthly',
                       start_date: '',
                       next_billing: '',
-                      category_id: ''
+                      category_id: '',
+                      currency: 'USD'
                     });
                     setShowModal(true);
                   }}

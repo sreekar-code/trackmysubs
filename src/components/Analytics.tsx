@@ -19,6 +19,7 @@ import {
 } from 'chart.js';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import DashboardHeader from './dashboard/DashboardHeader';
 
 ChartJS.register(
@@ -322,14 +323,14 @@ const Analytics: React.FC = () => {
               <div className="bg-white rounded-lg -mx-4 sm:mx-0 overflow-x-auto">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
-                    plugins={[dayGridPlugin]}
-                    initialView="dayGridMonth"
+                    plugins={[dayGridPlugin, timeGridPlugin]}
+                    initialView={isMobile ? 'timeGridWeek' : 'dayGridMonth'}
                     events={calendarEvents}
                     height="auto"
                     headerToolbar={{
-                      left: isMobile ? 'prev,next' : 'prev,next today',
+                      left: 'prev,next',
                       center: 'title',
-                      right: 'dayGridMonth'
+                      right: isMobile ? 'timeGridWeek,dayGridMonth' : 'dayGridMonth,timeGridWeek'
                     }}
                     dayMaxEvents={isMobile ? 2 : true}
                     eventDisplay={isMobile ? 'block' : 'auto'}
@@ -344,6 +345,25 @@ const Analytics: React.FC = () => {
                         },
                         eventMinHeight: isMobile ? 20 : 25,
                         eventShortHeight: isMobile ? 30 : 40,
+                      },
+                      timeGridWeek: {
+                        titleFormat: { 
+                          year: 'numeric', 
+                          month: 'short',
+                          day: '2-digit'
+                        },
+                        dayHeaderFormat: { 
+                          weekday: isMobile ? 'narrow' : 'short',
+                          month: 'numeric',
+                          day: 'numeric',
+                          omitCommas: true
+                        },
+                        slotMinTime: '00:00:00',
+                        slotMaxTime: '24:00:00',
+                        allDaySlot: true,
+                        allDayText: 'All Day',
+                        slotDuration: '24:00:00',
+                        expandRows: true
                       }
                     }}
                     eventTimeFormat={{

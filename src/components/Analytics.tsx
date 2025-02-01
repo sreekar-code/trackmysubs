@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { convertCurrency } from '../utils/currencyConverter';
 import { BarChart, LineChart, PieChart, Calendar, Clock, LayoutDashboard } from 'lucide-react';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
@@ -58,6 +59,8 @@ const Analytics: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, showAbove: false });
+  const [convertedAmounts, setConvertedAmounts] = useState<{ [key: string]: number }>({});
+  const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -105,31 +108,62 @@ const Analytics: React.FC = () => {
     fetchSubscriptions();
   }, []);
 
-  const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
+  const calculateMonthlyPrice = async (price: number, billingCycle: string, fromCurrency: string): Promise<number> => {
+    let monthlyPrice = price;
     switch (billingCycle) {
       case 'Yearly':
-        return price / 12;
+        monthlyPrice = price / 12;
+        break;
       case 'Quarterly':
-        return price / 3;
-      default:
-        return price;
+        monthlyPrice = price / 3;
+        break;
+    }
+    
+    try {
+      const convertedPrice = await convertCurrency(monthlyPrice, fromCurrency, currency);
+      return convertedPrice;
+    } catch (error) {
+      console.error('Error converting currency:', error);
+      return monthlyPrice;
     }
   };
 
-  // Prepare data for charts
-  const categoryData = subscriptions.reduce((acc: { [key: string]: number }, sub) => {
-    const category = sub.category?.name || 'Uncategorized';
-    const monthlyPrice = calculateMonthlyPrice(sub.price, sub.billing_cycle);
-    acc[category] = (acc[category] || 0) + monthlyPrice;
-    return acc;
-  }, {});
+  const prepareCategoryData = async () => {
+    setIsConverting(true);
+    try {
+      const categoryTotals: { [key: string]: number } = {};
+      
+      for (const sub of subscriptions) {
+        const category = sub.category?.name || 'Uncategorized';
+        const monthlyPrice = await calculateMonthlyPrice(
+          sub.price,
+          sub.billing_cycle,
+          sub.currency
+        );
+        
+        categoryTotals[category] = (categoryTotals[category] || 0) + monthlyPrice;
+      }
+
+      setConvertedAmounts(categoryTotals);
+    } catch (error) {
+      console.error('Error preparing category data:', error);
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (subscriptions.length > 0) {
+      prepareCategoryData();
+    }
+  }, [subscriptions, currency]);
 
   const monthlySpendData = {
-    labels: Object.keys(categoryData),
+    labels: Object.keys(convertedAmounts),
     datasets: [
       {
-        label: 'Monthly Spend by Category',
-        data: Object.values(categoryData),
+        label: `Monthly Spend by Category (${currency})`,
+        data: Object.values(convertedAmounts),
         backgroundColor: [
           'rgba(54, 162, 235, 0.5)',
           'rgba(255, 99, 132, 0.5)',
@@ -163,7 +197,7 @@ const Analytics: React.FC = () => {
     .sort((a, b) => new Date(a.next_billing).getTime() - new Date(b.next_billing).getTime())
     .map(sub => ({
       ...sub,
-      monthlyPrice: calculateMonthlyPrice(sub.price, sub.billing_cycle),
+      monthlyPrice: calculateMonthlyPrice(sub.price, sub.billing_cycle, sub.currency),
     }));
 
   const handleSignOut = async () => {
@@ -244,88 +278,98 @@ const Analytics: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
           {activeView === 'graphs' && (
             <div className="space-y-6 sm:space-y-8">
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold mb-4">Monthly Spend by Category</h3>
-                <div className="h-[300px] sm:h-[400px]">
-                  <Bar
-                    data={monthlySpendData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: isMobile ? 'bottom' : 'top',
-                          labels: {
-                            boxWidth: isMobile ? 12 : 40,
-                            padding: isMobile ? 10 : 20,
-                            font: {
-                              size: isMobile ? 10 : 12
-                            }
-                          }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: function(context) {
-                              return `${context.label}: ${formatAmount(context.raw as number)}`;
-                            }
-                          }
-                        }
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          ticks: {
-                            callback: function(value) {
-                              return formatAmount(value as number);
+              {isConverting ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold mb-4">
+                      Monthly Spend by Category ({currency})
+                    </h3>
+                    <div className="h-[300px] sm:h-[400px]">
+                      <Bar
+                        data={monthlySpendData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: isMobile ? 'bottom' : 'top',
+                              labels: {
+                                boxWidth: isMobile ? 12 : 40,
+                                padding: isMobile ? 10 : 20,
+                                font: {
+                                  size: isMobile ? 10 : 12
+                                }
+                              }
                             },
-                            font: {
-                              size: isMobile ? 10 : 12
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
+                                }
+                              }
+                            }
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function(value) {
+                                  return formatAmount(value as number);
+                                },
+                                font: {
+                                  size: isMobile ? 10 : 12
+                                }
+                              }
+                            },
+                            x: {
+                              ticks: {
+                                font: {
+                                  size: isMobile ? 10 : 12
+                                }
+                              }
                             }
                           }
-                        },
-                        x: {
-                          ticks: {
-                            font: {
-                              size: isMobile ? 10 : 12
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
+                    <div className="h-[300px] sm:h-[400px]">
+                      <Pie
+                        data={monthlySpendData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: isMobile ? 'bottom' : 'top',
+                              labels: {
+                                boxWidth: isMobile ? 12 : 40,
+                                padding: isMobile ? 10 : 20,
+                                font: {
+                                  size: isMobile ? 10 : 12
+                                }
+                              }
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  return `${context.label}: ${formatAmount(context.raw as number)}`;
+                                }
+                              }
                             }
                           }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold mb-4">Spend Distribution</h3>
-                <div className="h-[300px] sm:h-[400px]">
-                  <Pie
-                    data={monthlySpendData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: isMobile ? 'bottom' : 'top',
-                          labels: {
-                            boxWidth: isMobile ? 12 : 40,
-                            padding: isMobile ? 10 : 20,
-                            font: {
-                              size: isMobile ? 10 : 12
-                            }
-                          }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: function(context) {
-                              return `${context.label}: ${formatAmount(context.raw as number)}`;
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

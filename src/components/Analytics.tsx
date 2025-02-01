@@ -55,6 +55,8 @@ const Analytics: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     const handleResize = () => {
@@ -144,6 +146,9 @@ const Analytics: React.FC = () => {
     backgroundColor: sub.category?.name === 'Streaming' ? '#3B82F6' :
                     sub.category?.name === 'Software' ? '#EF4444' :
                     '#10B981',
+    extendedProps: {
+      subscription: sub
+    }
   }));
 
   const timelineEvents = [...subscriptions]
@@ -319,7 +324,7 @@ const Analytics: React.FC = () => {
           {activeView === 'calendar' && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4">Subscription Calendar</h3>
-              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow">
+              <div className="bg-gray-50 rounded-lg -mx-4 sm:mx-0 overflow-x-auto p-3 shadow relative">
                 <div className={`${isMobile ? 'text-sm' : 'text-base'}`}>
                   <FullCalendar
                     plugins={[dayGridPlugin]}
@@ -352,8 +357,17 @@ const Analytics: React.FC = () => {
                           className={`
                             p-2 rounded-md w-full
                             ${isMobile ? 'text-xs' : 'text-sm'} 
-                            text-white font-semibold
+                            text-white font-semibold cursor-pointer
                           `}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setPopupPosition({
+                              top: rect.top + window.scrollY - 10,
+                              left: rect.left + window.scrollX
+                            });
+                            setSelectedSubscription(arg.event.extendedProps.subscription);
+                          }}
                         >
                           <span className="truncate block">{arg.event.title}</span>
                         </div>
@@ -361,12 +375,69 @@ const Analytics: React.FC = () => {
                     }}
                     dayHeaderClassNames={isMobile ? 'text-xs py-1' : 'py-2'}
                     dayCellClassNames={isMobile ? 'text-xs' : 'text-sm'}
-                    eventClassNames="rounded-md shadow-sm"
+                    eventClassNames="rounded-md shadow-sm hover:shadow-md transition-shadow"
                     contentHeight={isMobile ? "auto" : 600}
                     handleWindowResize={true}
                     stickyHeaderDates={true}
                   />
                 </div>
+
+                {/* Subscription Details Popup */}
+                {selectedSubscription && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setSelectedSubscription(null)}
+                    />
+                    <div
+                      className="absolute z-50 bg-white rounded-lg shadow-lg p-4 w-[280px]"
+                      style={{
+                        top: `${popupPosition.top}px`,
+                        left: `${popupPosition.left}px`,
+                        transform: 'translateY(-100%)'
+                      }}
+                    >
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-900">{selectedSubscription.name}</h4>
+                          <button
+                            onClick={() => setSelectedSubscription(null)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="h-px bg-gray-200" />
+                        <div className="space-y-2">
+                          <p className="text-sm">
+                            <span className="text-gray-500">Price:</span>{' '}
+                            <span className="font-medium text-gray-900">
+                              {formatAmount(selectedSubscription.price)}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-gray-500">Category:</span>{' '}
+                            <span className="font-medium text-gray-900">
+                              {selectedSubscription.category?.name || 'Uncategorized'}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-gray-500">Billing Cycle:</span>{' '}
+                            <span className="font-medium text-gray-900">
+                              {selectedSubscription.billing_cycle}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-gray-500">Next Billing:</span>{' '}
+                            <span className="font-medium text-gray-900">
+                              {new Date(selectedSubscription.next_billing).toLocaleDateString()}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

@@ -186,10 +186,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">
+    <div className="fixed inset-0 bg-gray-500/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">
             {editingSubscription ? 'Edit Subscription' : 'Add New Subscription'}
           </h3>
           <button
@@ -200,21 +200,21 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               setNewCategoryName('');
               setEditingSubscription(null);
             }}
-            className="text-gray-400 hover:text-gray-500 p-1 hover:bg-gray-100 rounded-full"
+            className="text-gray-400 hover:text-gray-500 p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {modalError && (
-          <div className="mb-4 bg-red-50 p-3 rounded-md">
+          <div className="mb-6 bg-red-50 p-4 rounded-lg border border-red-200">
             <div className="text-sm text-red-700">{modalError}</div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Service Name
             </label>
             <input
@@ -222,17 +222,18 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               name="name"
               id="name"
               required
+              placeholder="e.g. Netflix, Spotify"
               value={subscriptionForm.name}
               onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
             />
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-              Price
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+              Price & Currency
             </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
+            <div className="relative rounded-lg shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 sm:text-sm">{currencySymbol}</span>
               </div>
@@ -243,16 +244,17 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 required
                 min="0"
                 step="0.01"
+                placeholder="0.00"
                 value={subscriptionForm.price}
                 onChange={handleInputChange}
-                className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-7 pr-28 border border-gray-300 rounded-lg shadow-sm py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
               />
               <div className="absolute inset-y-0 right-0 flex items-center">
                 <select
                   name="currency"
                   value={subscriptionForm.currency || 'USD'}
                   onChange={handleInputChange}
-                  className="focus:ring-blue-500 focus:border-blue-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md"
+                  className="h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   {Object.entries(currencies).map(([code, { name }]) => (
                     <option key={code} value={code}>
@@ -265,7 +267,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </div>
 
           <div>
-            <label htmlFor="billing_cycle" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="billing_cycle" className="block text-sm font-medium text-gray-700 mb-1">
               Billing Cycle
             </label>
             <select
@@ -274,7 +276,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               required
               value={subscriptionForm.billing_cycle}
               onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow cursor-pointer"
             >
               <option value="Monthly">Monthly</option>
               <option value="Quarterly">Quarterly</option>
@@ -283,7 +285,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </div>
 
           <div>
-            <label htmlFor="start_date" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
               Start Date
             </label>
             <input
@@ -293,39 +295,39 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               required
               value={subscriptionForm.start_date}
               onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
             />
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
               Category
             </label>
             {showNewCategoryInput ? (
-              <div className="mt-1 flex rounded-md shadow-sm">
+              <div className="flex rounded-lg shadow-sm">
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow"
                   placeholder="Enter category name"
                 />
                 <button
                   type="button"
                   onClick={handleCreateCategory}
-                  className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 text-gray-700 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   Add
                 </button>
               </div>
             ) : (
-              <div className="mt-1 flex rounded-md shadow-sm">
+              <div className="flex rounded-lg shadow-sm">
                 <select
                   id="category"
                   name="category_id"
                   value={subscriptionForm.category_id}
                   onChange={handleInputChange}
-                  className="flex-1 block w-full rounded-none rounded-l-md border border-gray-300 py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="flex-1 block w-full rounded-l-lg border border-gray-300 py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 sm:text-sm transition-shadow cursor-pointer"
                 >
                   <option value="">Select a category</option>
                   {sortedCategories.map((category) => (
@@ -337,7 +339,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryInput(true)}
-                  className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 text-gray-700 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   New
                 </button>
@@ -345,7 +347,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             )}
           </div>
 
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end space-x-3 pt-2">
             <button
               type="button"
               onClick={() => {
@@ -355,13 +357,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 setNewCategoryName('');
                 setEditingSubscription(null);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               {editingSubscription ? 'Save Changes' : 'Add Subscription'}
             </button>

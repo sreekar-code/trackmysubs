@@ -1,5 +1,16 @@
 import { supabase } from './supabase';
 
+const initializeUserProfile = async (userId: string) => {
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ id: userId }, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Profile initialization error:', error);
+    throw new Error('Failed to initialize user profile');
+  }
+};
+
 export const signUp = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -7,6 +18,12 @@ export const signUp = async (email: string, password: string) => {
   });
   
   if (error) throw error;
+
+  // Initialize profile for new user
+  if (data.user) {
+    await initializeUserProfile(data.user.id);
+  }
+
   return data;
 };
 
@@ -17,6 +34,12 @@ export const signIn = async (email: string, password: string) => {
   });
   
   if (error) throw error;
+
+  // Ensure profile exists
+  if (data.user) {
+    await initializeUserProfile(data.user.id);
+  }
+
   return data;
 };
 

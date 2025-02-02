@@ -1,11 +1,72 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
+// Memoize Feature component to prevent unnecessary re-renders
+const Feature = memo<FeatureProps>(({ icon, title, description }) => (
+  <div className="relative pl-4">
+    <div className="flex flex-col items-center text-center">
+      <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-6">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
+      <p className="text-gray-600 leading-relaxed">{description}</p>
+    </div>
+  </div>
+));
+
+Feature.displayName = 'Feature';
+
+// Pre-define icons with memoization to prevent recreation on each render
+const icons = {
+  zap: <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  clock: <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  dollar: <DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  tag: <Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  globe: <Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  chart: <BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+};
+
+// Define features array to avoid recreation on each render
+const features = [
+  {
+    icon: icons.zap,
+    title: "Quick Overview",
+    description: "Manage all your subscriptions in a clean, simple dashboard."
+  },
+  {
+    icon: icons.clock,
+    title: "Renewal Tracking",
+    description: "Spot upcoming and overdue renewals at a glance."
+  },
+  {
+    icon: icons.dollar,
+    title: "Monthly Spend",
+    description: "Track your total subscription costs in real-time."
+  },
+  {
+    icon: icons.tag,
+    title: "Custom Categories",
+    description: "Organize subscriptions with your own categories."
+  },
+  {
+    icon: icons.globe,
+    title: "Multi-Currency",
+    description: "Auto-convert costs to your preferred currency."
+  },
+  {
+    icon: icons.chart,
+    title: "Smart Analytics",
+    description: "View spending trends with charts and calendar."
+  }
+];
+
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+  const currentYear = new Date().getFullYear();
+  
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
@@ -21,7 +82,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       <main className="flex-grow flex flex-col">
         <div className="relative flex-grow flex items-center justify-center bg-gradient-to-b from-white to-blue-50">
-          <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,transparent)] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,white,transparent)]" style={{ backgroundSize: '30px 30px' }} />
+          <div 
+            className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,transparent)] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,white,transparent)]" 
+            style={{ backgroundSize: '30px 30px' }} 
+          />
           
           <div className="relative w-full">
             <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
@@ -53,36 +117,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
               <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-3">
-                <Feature
-                  icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Quick Overview"
-                  description="Manage all your subscriptions in a clean, simple dashboard."
-                />
-                <Feature
-                  icon={<Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Renewal Tracking"
-                  description="Spot upcoming and overdue renewals at a glance."
-                />
-                <Feature
-                  icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Monthly Spend"
-                  description="Track your total subscription costs in real-time."
-                />
-                <Feature
-                  icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Custom Categories"
-                  description="Organize subscriptions with your own categories."
-                />
-                <Feature
-                  icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Multi-Currency"
-                  description="Auto-convert costs to your preferred currency."
-                />
-                <Feature
-                  icon={<BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />}
-                  title="Smart Analytics"
-                  description="View spending trends with charts and calendar."
-                />
+                {features.map((feature, index) => (
+                  <Feature
+                    key={index}
+                    icon={feature.icon}
+                    title={feature.title}
+                    description={feature.description}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -92,7 +134,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <footer className="bg-white border-t border-gray-100">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <p className="text-center text-gray-500 text-sm">
-            © {new Date().getFullYear()} trackmysubs.in. All rights reserved.
+            © {currentYear} trackmysubs.in. All rights reserved.
           </p>
         </div>
       </footer>
@@ -106,18 +148,4 @@ interface FeatureProps {
   description: string;
 }
 
-const Feature: React.FC<FeatureProps> = ({ icon, title, description }) => {
-  return (
-    <div className="relative pl-4">
-      <div className="flex flex-col items-center text-center">
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-6">
-          {icon}
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
-        <p className="text-gray-600 leading-relaxed">{description}</p>
-      </div>
-    </div>
-  );
-};
-
-export default LandingPage;
+export default memo(LandingPage);

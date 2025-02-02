@@ -3,33 +3,43 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 
-// Optimize lazy loading with prefetch
-const LandingPage = lazy(() =>
-  import('./components/LandingPage' /* webpackPrefetch: true */)
-);
-const Dashboard = lazy(() =>
-  import('./components/Dashboard' /* webpackPrefetch: true */)
-);
-const Analytics = lazy(() =>
-  import('./components/Analytics' /* webpackPrefetch: true */)
-);
-const Auth = lazy(() =>
-  import('./components/Auth' /* webpackPrefetch: true */)
-);
-const ResetPassword = lazy(() =>
-  import('./components/ResetPassword' /* webpackPrefetch: true */)
-);
-const AuthCallback = lazy(() =>
-  import('./components/AuthCallback' /* webpackPrefetch: true */)
+// Preload critical components
+const preloadComponent = (factory: () => Promise<any>) => {
+  const Component = lazy(factory);
+  // Start loading the component in the background
+  factory();
+  return Component;
+};
+
+// Optimize lazy loading with chunk naming and preload
+const LandingPage = preloadComponent(() =>
+  import(/* webpackChunkName: "landing" */ './components/LandingPage')
 );
 
-// Optimized loading component
+const Dashboard = preloadComponent(() =>
+  import(/* webpackChunkName: "dashboard" */ './components/Dashboard')
+);
+
+const Analytics = lazy(() =>
+  import(/* webpackChunkName: "analytics" */ './components/Analytics')
+);
+
+const Auth = lazy(() =>
+  import(/* webpackChunkName: "auth" */ './components/Auth')
+);
+
+const ResetPassword = lazy(() =>
+  import(/* webpackChunkName: "reset-password" */ './components/ResetPassword')
+);
+
+const AuthCallback = lazy(() =>
+  import(/* webpackChunkName: "auth-callback" */ './components/AuthCallback')
+);
+
+// Optimized loading component with minimal UI
 const LoadingFallback = React.memo(() => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-      <p className="mt-4 text-gray-600">Loading...</p>
-    </div>
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
   </div>
 ));
 
@@ -42,12 +52,16 @@ function App() {
   useEffect(() => {
     let mounted = true;
 
-    // Optimized session check
+    // Optimized session check with timeout
     const checkSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+        
         if (mounted) {
           setSession(session);
           setLoading(false);
@@ -69,25 +83,28 @@ function App() {
       }
     });
 
-    // Prefetch other components
-    const prefetchComponents = () => {
-      const prefetchPromises = [
-        import('./components/Dashboard'),
-        import('./components/Auth'),
-        import('./components/LandingPage'),
-        import('./components/Analytics'),
-      ];
-      Promise.all(prefetchPromises).catch(() => {});
+    // Intelligent preloading based on user state
+    const preloadNextComponents = () => {
+      if (!session) {
+        // If not logged in, preload auth-related components
+        import('./components/Auth');
+        import('./components/LandingPage');
+      } else {
+        // If logged in, preload dashboard and analytics
+        import('./components/Dashboard');
+        import('./components/Analytics');
+      }
     };
 
-    // Prefetch after initial render
-    setTimeout(prefetchComponents, 1000);
+    // Start preloading after initial render
+    const preloadTimeout = setTimeout(preloadNextComponents, 1000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(preloadTimeout);
     };
-  }, []);
+  }, [session]);
 
   if (loading) {
     return <LoadingFallback />;

@@ -22,15 +22,6 @@ const ResetPassword = lazy(() =>
 const AuthCallback = lazy(() =>
   import('./components/AuthCallback' /* webpackPrefetch: true */)
 );
-const PrivacyPolicy = lazy(() =>
-  import('./components/policies/PrivacyPolicy' /* webpackPrefetch: true */)
-);
-const TermsAndConditions = lazy(() =>
-  import('./components/policies/TermsAndConditions' /* webpackPrefetch: true */)
-);
-const CancellationPolicy = lazy(() =>
-  import('./components/policies/CancellationPolicy' /* webpackPrefetch: true */)
-);
 
 // Optimized loading component
 const LoadingFallback = React.memo(() => (
@@ -124,12 +115,6 @@ function App() {
           />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          
-          {/* Policy Routes */}
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsAndConditions />} />
-          <Route path="/cancellation" element={<CancellationPolicy />} />
-          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

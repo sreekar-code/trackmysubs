@@ -17,9 +17,6 @@ export const signUp = async (email: string, password: string) => {
 };
 
 export const signIn = async (email: string, password: string) => {
-  // Clear any existing session before signing in
-  await signOut();
-  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,

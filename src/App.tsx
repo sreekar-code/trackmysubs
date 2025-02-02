@@ -66,8 +66,10 @@ function App() {
           setSession(session);
           setLoading(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('Session check error:', error);
         if (mounted) {
+          setSession(null);
           setLoading(false);
         }
       }
@@ -80,6 +82,9 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
         setSession(session);
+        if (session) {
+          setShowAuth(false); // Hide auth modal when session is established
+        }
       }
     });
 
@@ -104,7 +109,7 @@ function App() {
       subscription.unsubscribe();
       clearTimeout(preloadTimeout);
     };
-  }, [session]);
+  }, []);
 
   if (loading) {
     return <LoadingFallback />;
@@ -120,7 +125,11 @@ function App() {
               session ? (
                 <Dashboard />
               ) : showAuth ? (
-                <Auth onSignIn={() => setSession(true)} />
+                <Auth onSignIn={() => {
+                  // Don't manually set session, it will be handled by onAuthStateChange
+                  // Just close the auth modal if needed
+                  setShowAuth(false);
+                }} />
               ) : (
                 <LandingPage onGetStarted={() => setShowAuth(true)} />
               )

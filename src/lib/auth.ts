@@ -3,13 +3,7 @@ import { supabase } from './supabase';
 export const signUp = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
-    password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
-      data: {
-        last_sign_in: new Date().toISOString(),
-      }
-    }
+    password
   });
   
   if (error) throw error;
@@ -19,12 +13,7 @@ export const signUp = async (email: string, password: string) => {
 export const signIn = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password,
-    options: {
-      data: {
-        last_sign_in: new Date().toISOString(),
-      }
-    }
+    password
   });
   
   if (error) throw error;
@@ -35,12 +24,8 @@ export const signInWithGoogle = async () => {
   return await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'select_account',
-      },
-    },
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
   });
 };
 

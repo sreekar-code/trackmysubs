@@ -32,8 +32,8 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
       } else {
         const { user } = await signUp(email, password);
         if (user) {
-          setResetSent(true);
-          setError('Please check your email for a confirmation link to complete your registration.');
+          onSignIn();
+          navigate('/');
         }
       }
     } catch (err) {

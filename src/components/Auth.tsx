@@ -32,8 +32,8 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
       } else {
         const { user } = await signUp(email, password);
         if (user) {
-          onSignIn();
-          navigate('/');
+          setResetSent(true);
+          setError('Please check your email for a confirmation link to complete your registration.');
         }
       }
     } catch (err) {
@@ -48,8 +48,9 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
-      // The redirect will handle the rest
+      const result = await signInWithGoogle();
+      // The OAuth flow will handle the redirect automatically
+      // No need to do anything here as the callback will handle the session
     } catch (err) {
       console.error('Google auth error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');
@@ -106,24 +107,27 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
               </div>
             )}
 
-            {resetSent ? (
+            {resetSent && (
               <div className="text-center">
                 <div className="bg-green-50 p-4 rounded-md mb-4">
                   <p className="text-sm text-green-700">
-                    Check your email for a link to reset your password.
+                    {isLogin ? 'Check your email for a link to reset your password.' : 'Please check your email to confirm your account. You will be able to sign in after confirming your email address.'}
                   </p>
                 </div>
                 <button
                   onClick={() => {
                     setShowForgotPassword(false);
                     setResetSent(false);
+                    setIsLogin(true);
                   }}
                   className="text-blue-600 hover:text-blue-500 text-sm font-medium"
                 >
                   Return to sign in
                 </button>
               </div>
-            ) : (
+            )}
+
+            {!resetSent && (
               <form onSubmit={handleForgotPassword} className="mt-6 space-y-5">
                 <div>
                   <label
@@ -210,9 +214,29 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
             </p>
           </div>
 
-          {error && (
+          {error && !resetSent && (
             <div className="bg-red-50 p-4 rounded-md">
               <div className="text-sm text-red-700">{error}</div>
+            </div>
+          )}
+
+          {resetSent && (
+            <div className="text-center">
+              <div className="bg-green-50 p-4 rounded-md mb-4">
+                <p className="text-sm text-green-700">
+                  {isLogin ? 'Check your email for a link to reset your password.' : 'Please check your email to confirm your account. You will be able to sign in after confirming your email address.'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setResetSent(false);
+                  setIsLogin(true);
+                }}
+                className="text-blue-600 hover:text-blue-500 text-sm font-medium"
+              >
+                Return to sign in
+              </button>
             </div>
           )}
 

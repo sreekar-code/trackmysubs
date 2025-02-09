@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import NotFound from './components/NotFound';
 import { supabase } from './lib/supabase';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 
@@ -141,7 +142,8 @@ function App() {
           />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
+<Route path="/404" element={<NotFound />} />
         </Routes>
       </Suspense>
     </CurrencyProvider>

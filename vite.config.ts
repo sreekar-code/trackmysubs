@@ -31,8 +31,6 @@ export default defineConfig({
   cacheDir: 'node_modules/.vite',
   // Add compression
   server: {
-    port: 53371,
-    host: '0.0.0.0',
     headers: {
       'Cache-Control': 'public, max-age=31536000'
     }

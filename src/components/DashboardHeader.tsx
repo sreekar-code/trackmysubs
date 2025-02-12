@@ -40,6 +40,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <Plus className="h-5 w-5 sm:mr-2" />
               <span className="hidden sm:inline">Add New</span>
             </button>
+<button
+              onClick={onManageCategories}
+              className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ml-2"
+            >
+              <span>Manage Categories</span>
+            </button>
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="sm:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"

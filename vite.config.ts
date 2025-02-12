@@ -31,6 +31,16 @@ export default defineConfig({
   cacheDir: 'node_modules/.vite',
   // Add compression
   server: {
+server: {
+      port: 53494,
+      host: '0.0.0.0',
+      cors: {
+        origin: '*',
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+        preflightContinue: false,
+        optionsSuccessStatus: 204
+      },
+    },
     headers: {
       'Cache-Control': 'public, max-age=31536000'
     }

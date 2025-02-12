@@ -290,7 +290,7 @@ const Dashboard: React.FC = () => {
       )}
 
       <DashboardHeader
-        onAddNew={() => {
+        
           setEditingSubscription(null);
           setSubscriptionForm({
             name: '',
@@ -313,6 +313,26 @@ const Dashboard: React.FC = () => {
         <DashboardStats subscriptions={subscriptions} />
 
         <div className="mt-4 sm:mt-8">
+315               <div className="mb-4">
+   315              <button
+   315                onClick={() => {
+   315                  setEditingSubscription(null);
+   315                  setSubscriptionForm({
+   315                    name: '',
+   315                    price: '',
+   315                    billing_cycle: 'Monthly',
+   315                    start_date: '',
+   315                    next_billing: '',
+   315                    category_id: '',
+   315                    currency: 'USD'
+   315                  });
+   315                  setShowModal(true);
+   315                }}
+   315                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+   315              >
+   315                Add New
+   315              </button>
+   315            </div>
           <SubscriptionFilters
             categories={categories}
             selectedCategory={selectedCategory}

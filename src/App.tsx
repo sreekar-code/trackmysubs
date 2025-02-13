@@ -140,12 +140,13 @@ function App() {
                 <Dashboard />
               ) : showAuth ? (
                 <Auth onSignIn={() => {
-                  // Don't manually set session, it will be handled by onAuthStateChange
-                  // Just close the auth modal if needed
                   setShowAuth(false);
                 }} />
               ) : (
-                <LandingPage onGetStarted={() => setShowAuth(true)} />
+                <LandingPage 
+                  onGetStarted={() => setShowAuth(true)} 
+                  onLogin={() => setShowAuth(true)}
+                />
               )
             }
           />

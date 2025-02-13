@@ -290,49 +290,41 @@ const Dashboard: React.FC = () => {
       )}
 
       <DashboardHeader
-        
-          setEditingSubscription(null);
-          setSubscriptionForm({
-            name: '',
-            price: '',
-            billing_cycle: 'Monthly',
-            start_date: '',
-            next_billing: '',
-            category_id: '',
-            currency: 'USD'
-          });
-          setShowModal(true);
-        }}
         onSignOut={handleSignOut}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
-        onManageCategories={() => setShowCategoryManagement(true)}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <DashboardStats subscriptions={subscriptions} />
 
         <div className="mt-4 sm:mt-8">
-315               <div className="mb-4">
-   315              <button
-   315                onClick={() => {
-   315                  setEditingSubscription(null);
-   315                  setSubscriptionForm({
-   315                    name: '',
-   315                    price: '',
-   315                    billing_cycle: 'Monthly',
-   315                    start_date: '',
-   315                    next_billing: '',
-   315                    category_id: '',
-   315                    currency: 'USD'
-   315                  });
-   315                  setShowModal(true);
-   315                }}
-   315                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-   315              >
-   315                Add New
-   315              </button>
-   315            </div>
+          <div className="flex items-center space-x-3 mb-4">
+            <button
+              onClick={() => {
+                setEditingSubscription(null);
+                setSubscriptionForm({
+                  name: '',
+                  price: '',
+                  billing_cycle: 'Monthly',
+                  start_date: '',
+                  next_billing: '',
+                  category_id: '',
+                  currency: 'USD'
+                });
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Add New
+            </button>
+            <button
+              onClick={() => setShowCategoryManagement(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Manage Categories
+            </button>
+          </div>
           <SubscriptionFilters
             categories={categories}
             selectedCategory={selectedCategory}

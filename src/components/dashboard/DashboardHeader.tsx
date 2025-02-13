@@ -1,21 +1,17 @@
 import React from 'react';
-import { CreditCard, Plus, LogOut, Menu, BarChart } from 'lucide-react';
+import { CreditCard, LogOut, Menu } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface DashboardHeaderProps {
-  onAddNew: () => void;
   onSignOut: () => void;
   showMobileMenu: boolean;
   setShowMobileMenu: (show: boolean) => void;
-  onManageCategories: () => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  onAddNew,
   onSignOut,
   showMobileMenu,
   setShowMobileMenu,
-  onManageCategories,
 }) => {
   const location = useLocation();
   const isAnalyticsPage = location.pathname === '/analytics';
@@ -55,15 +51,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {!isAnalyticsPage && (
-              <button 
-                onClick={onAddNew}
-                className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-              >
-                <Plus className="h-5 w-5 sm:mr-2" />
-                <span className="hidden sm:inline">Add New</span>
-              </button>
-            )}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="sm:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
@@ -103,12 +90,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               >
                 <span>Analytics</span>
               </Link>
-              <button
-                onClick={onManageCategories}
-                className="flex items-center space-x-2 w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-              >
-                <span>Manage Categories</span>
-              </button>
               <button
                 onClick={onSignOut}
                 className="flex items-center space-x-2 w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"

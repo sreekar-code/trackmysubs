@@ -325,20 +325,23 @@ const Dashboard: React.FC = () => {
               Manage Categories
             </button>
           </div>
-          <SubscriptionFilters
-            categories={categories}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedBillingCycle={selectedBillingCycle}
-            setSelectedBillingCycle={setSelectedBillingCycle}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            onManageCategories={() => setShowCategoryManagement(true)}
-            showRenewingSoon={showRenewingSoon}
-            setShowRenewingSoon={setShowRenewingSoon}
-            showExpired={showExpired}
-            setShowExpired={setShowExpired}
-          />
+
+          {subscriptions.length > 0 && (
+            <SubscriptionFilters
+              categories={categories}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedBillingCycle={selectedBillingCycle}
+              setSelectedBillingCycle={setSelectedBillingCycle}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onManageCategories={() => setShowCategoryManagement(true)}
+              showRenewingSoon={showRenewingSoon}
+              setShowRenewingSoon={setShowRenewingSoon}
+              showExpired={showExpired}
+              setShowExpired={setShowExpired}
+            />
+          )}
 
           {subscriptions.length > 0 ? (
             <div className="bg-white shadow rounded-lg overflow-hidden">

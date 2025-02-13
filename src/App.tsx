@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import NotFound from './components/NotFound';
 import { supabase } from './lib/supabase';
 import { CurrencyProvider } from './contexts/CurrencyContext';
+import { useAnalytics } from './hooks/useAnalytics';
 
 // Preload critical components
 const preloadComponent = (factory: () => Promise<any>) => {
@@ -62,6 +63,7 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const { trackEvent } = useAnalytics();
 
   // Add function to handle login
   const handleLogin = async () => {
@@ -70,6 +72,7 @@ function App() {
       if (session) {
         // If user is already logged in, redirect to dashboard
         setSession(session);
+        trackEvent('user_login', { method: 'auto' });
       } else {
         // If not logged in, show auth modal
         setShowAuth(true);
@@ -95,6 +98,9 @@ function App() {
         
         if (mounted) {
           setSession(session);
+          if (session) {
+            trackEvent('session_restored');
+          }
           setLoading(false);
         }
       } catch (error) {
@@ -114,7 +120,10 @@ function App() {
       if (mounted) {
         setSession(session);
         if (session) {
-          setShowAuth(false); // Hide auth modal when session is established
+          setShowAuth(false);
+          trackEvent('auth_state_changed', { state: 'signed_in' });
+        } else {
+          trackEvent('auth_state_changed', { state: 'signed_out' });
         }
       }
     });
@@ -140,7 +149,7 @@ function App() {
       subscription.unsubscribe();
       clearTimeout(preloadTimeout);
     };
-  }, []);
+  }, [trackEvent]);
 
   if (loading) {
     return <LoadingFallback />;

@@ -161,7 +161,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                     </p>
                   </div>
                   <p className="mt-6 text-base leading-7 text-gray-600">
-                    Perfect for getting started with subscription tracking
+                    Perfect for tracking your subscriptions
                   </p>
                   <div className="mt-8 flex items-baseline gap-x-1">
                     <span className="text-4xl font-bold tracking-tight text-gray-900">$0</span>
@@ -170,15 +170,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Access to Dashboard
+                      Subscription Dashboard
                     </li>
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Subscription Tracking
+                      Track All Your Subscriptions
                     </li>
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Basic Categories
+                      Organize with Categories
+                    </li>
+                    <li className="flex gap-x-3">
+                      <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
+                      Multi-Currency Support
                     </li>
                   </ul>
                 </div>
@@ -199,7 +203,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                     </p>
                   </div>
                   <p className="mt-6 text-base leading-7 text-gray-600">
-                    Advanced features for better subscription management
+                    Everything in Free plus Analytics
                   </p>
                   <div className="mt-8 flex items-baseline gap-x-1">
                     <span className="text-4xl font-bold tracking-tight text-gray-900">$10</span>
@@ -211,7 +215,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Everything in Free
+                      Everything in Free tier
                     </li>
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
@@ -219,11 +223,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                     </li>
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Advanced Categories
+                      Spending Trends & Insights
                     </li>
                     <li className="flex gap-x-3">
                       <Check className="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      Priority Support
+                      Visual Reports & Charts
                     </li>
                   </ul>
                 </div>

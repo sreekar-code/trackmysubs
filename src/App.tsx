@@ -63,6 +63,23 @@ function App() {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
+  // Add function to handle login
+  const handleLogin = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // If user is already logged in, redirect to dashboard
+        setSession(session);
+      } else {
+        // If not logged in, show auth modal
+        setShowAuth(true);
+      }
+    } catch (error) {
+      console.error('Login check error:', error);
+      setShowAuth(true);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -145,7 +162,7 @@ function App() {
               ) : (
                 <LandingPage 
                   onGetStarted={() => setShowAuth(true)} 
-                  onLogin={() => setShowAuth(true)}
+                  onLogin={handleLogin}
                 />
               )
             }

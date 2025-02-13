@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -132,10 +133,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </main>
 
       <footer className="bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-gray-500 text-sm">
-            © {currentYear} trackmysubs.in. All rights reserved.
-          </p>
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <nav className="flex flex-wrap justify-center space-x-6 mb-8">
+            <Link to="/terms" className="text-gray-500 hover:text-gray-900">
+              Terms & Conditions
+            </Link>
+            <Link to="/privacy" className="text-gray-500 hover:text-gray-900">
+              Privacy Policy
+            </Link>
+            <Link to="/refund" className="text-gray-500 hover:text-gray-900">
+              Refund Policy
+            </Link>
+            <a 
+              href="mailto:trackmysubs.in@gmail.com" 
+              className="text-gray-500 hover:text-gray-900"
+            >
+              Support
+            </a>
+          </nav>
+          <div className="flex flex-col items-center">
+            <p className="text-center text-gray-500 text-sm">
+              © {currentYear} trackmysubs.in. All rights reserved.
+            </p>
+            <p className="mt-2 text-center text-gray-500 text-sm">
+              Contact us: <a href="mailto:trackmysubs.in@gmail.com" className="text-blue-600 hover:text-blue-800">trackmysubs.in@gmail.com</a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>

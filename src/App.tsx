@@ -37,6 +37,19 @@ const AuthCallback = lazy(() =>
   import(/* webpackChunkName: "auth-callback" */ './components/AuthCallback')
 );
 
+// Lazy load the new pages
+const Terms = lazy(() =>
+  import(/* webpackChunkName: "terms" */ './pages/Terms')
+);
+
+const Privacy = lazy(() =>
+  import(/* webpackChunkName: "privacy" */ './pages/Privacy')
+);
+
+const Refund = lazy(() =>
+  import(/* webpackChunkName: "refund" */ './pages/Refund')
+);
+
 // Optimized loading component with minimal UI
 const LoadingFallback = React.memo(() => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -142,8 +155,11 @@ function App() {
           />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
           <Route path="*" element={<NotFound />} />
-<Route path="/404" element={<NotFound />} />
+          <Route path="/404" element={<NotFound />} />
         </Routes>
       </Suspense>
     </CurrencyProvider>

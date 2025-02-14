@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import FeedbackBox from './FeedbackBox';
 
 interface LandingPageProps {
   onGetStarted: () => void;

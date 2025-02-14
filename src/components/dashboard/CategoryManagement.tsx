@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Tag, Trash2, Edit2, Check, XCircle, Plus } from 'lucide-react';
 import { categoryOperations } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface Category {
   id: string;
@@ -76,7 +77,32 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
     setCreateSuccess(false);
 
     try {
-      await categoryOperations.createCategory(newCategoryName);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data: existingCategory, error: fetchError } = await supabase
+        .from('subscription_categories')
+        .select('id')
+        .eq('name', newCategoryName.trim())
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (existingCategory) throw new Error('A category with this name already exists');
+
+      const { data, error: createError } = await supabase
+        .from('subscription_categories')
+        .insert([{
+          name: newCategoryName.trim(),
+          user_id: user.id,
+          is_default: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
       setCreateSuccess(true);
       setTimeout(() => setCreateSuccess(false), 3000);
       setNewCategoryName('');

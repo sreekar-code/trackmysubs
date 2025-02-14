@@ -175,12 +175,15 @@ const Dashboard: React.FC = () => {
                 return prev;
               }
               // Add new category and sort
-              const newCategories = [...prev, payload.new].sort((a, b) => {
+              return [...prev, {
+                id: payload.new.id,
+                name: payload.new.name,
+                is_default: payload.new.is_default
+              }].sort((a, b) => {
                 if (a.name === 'Other') return 1;
                 if (b.name === 'Other') return -1;
                 return a.name.localeCompare(b.name);
               });
-              return newCategories;
             });
           } else if (payload.eventType === 'DELETE') {
             setCategories(prev => prev.filter(cat => cat.id !== payload.old.id));
@@ -197,7 +200,11 @@ const Dashboard: React.FC = () => {
             }));
           } else if (payload.eventType === 'UPDATE') {
             setCategories(prev => prev.map(cat => 
-              cat.id === payload.new.id ? { ...cat, ...payload.new } : cat
+              cat.id === payload.new.id ? {
+                ...cat,
+                name: payload.new.name,
+                is_default: payload.new.is_default
+              } : cat
             ));
             // Update subscription category names in the UI immediately
             setSubscriptions(prev => prev.map(sub => {

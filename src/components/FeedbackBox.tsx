@@ -59,13 +59,10 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
   return (
     <>
       {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm z-40"
-        onClick={onClose}
-      />
+      <div className="modal-overlay" onClick={onClose} />
       
       {/* Feedback Box */}
-      <div className="fixed bottom-4 right-4 w-full max-w-md bg-white rounded-lg shadow-xl p-6 z-50 animate-slide-up">
+      <div className="modal-content bottom-4 right-4 w-full max-w-md p-6 animate-slide-up">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center">
             <MessageCircle className="h-5 w-5 text-blue-500 mr-2" />
@@ -96,7 +93,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                 Your Feedback
               </label>
               <textarea
@@ -104,7 +101,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm resize-none"
+                className="resize-none"
                 placeholder="Tell us what you think..."
                 maxLength={1000}
                 disabled={loading}
@@ -115,7 +112,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email (optional)
               </label>
               <input
@@ -123,7 +120,6 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="your@email.com"
                 disabled={loading}
               />

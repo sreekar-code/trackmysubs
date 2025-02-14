@@ -1,12 +1,7 @@
-import React, { memo, useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// Lazy load the feedback component
-const FeedbackBox = lazy(() => import('./FeedbackBox'));
-
-// Optimize icons by memoizing them
-const MemoizedIcon = memo<{ icon: React.ReactNode }>(({ icon }) => icon);
+import FeedbackBox from './FeedbackBox';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -17,17 +12,7 @@ interface FeedbackBoxProps {
   onClose: () => void;
 }
 
-// Pre-define icons with memoization to prevent recreation on each render
-const icons = {
-  zap: <MemoizedIcon icon={<Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-  clock: <MemoizedIcon icon={<Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-  dollar: <MemoizedIcon icon={<DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-  tag: <MemoizedIcon icon={<Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-  globe: <MemoizedIcon icon={<Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-  chart: <MemoizedIcon icon={<BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />} />,
-};
-
-// Memoize the feature component
+// Memoize Feature component to prevent unnecessary re-renders
 const Feature = memo<FeatureProps>(({ icon, title, description }) => (
   <div className="relative pl-4">
     <div className="flex flex-col items-center text-center">
@@ -42,7 +27,17 @@ const Feature = memo<FeatureProps>(({ icon, title, description }) => (
 
 Feature.displayName = 'Feature';
 
-// Memoize the features list
+// Pre-define icons with memoization to prevent recreation on each render
+const icons = {
+  zap: <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  clock: <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  dollar: <DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  tag: <Tag className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  globe: <Globe className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+  chart: <BarChart className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500" />,
+};
+
+// Define features array to avoid recreation on each render
 const features = [
   {
     icon: icons.zap,
@@ -74,25 +69,14 @@ const features = [
     title: "Smart Analytics",
     description: "View spending trends with charts and calendar."
   }
-] as const;
+];
 
-// Memoize handlers
-const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
   const currentYear = new Date().getFullYear();
   const [showFeedback, setShowFeedback] = useState(false);
   const [hasFeedbackShown, setHasFeedbackShown] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   
-  const handleFeedbackClose = useCallback(() => {
-    setShowFeedback(false);
-    setHasFeedbackShown(true);
-    sessionStorage.setItem('feedbackShown', 'true');
-  }, []);
-
-  const handleFeedbackOpen = useCallback(() => {
-    setShowFeedback(true);
-  }, []);
-
   useEffect(() => {
     // Check if feedback has been shown in this session
     const hasShown = sessionStorage.getItem('feedbackShown');
@@ -109,12 +93,11 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
             setShowFeedback(true);
             setHasFeedbackShown(true);
             sessionStorage.setItem('feedbackShown', 'true');
-          }, 1000);
+          }, 1000); // Delay of 1 second after scrolling to the trigger point
         }
       },
       {
-        threshold: 0.5,
-        rootMargin: '100px',
+        threshold: 0.5, // Trigger when 50% of the element is visible
       }
     );
 
@@ -129,9 +112,15 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
     };
   }, [hasFeedbackShown]);
 
+  const handleFeedbackClose = () => {
+    setShowFeedback(false);
+    setHasFeedbackShown(true);
+    sessionStorage.setItem('feedbackShown', 'true');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10 will-change-transform">
+      <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -154,7 +143,7 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
         <div className="relative flex-grow flex items-center justify-center bg-gradient-to-b from-white to-blue-50">
           <div 
             className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,transparent)] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,white,transparent)]" 
-            style={{ backgroundSize: '30px 30px', willChange: 'transform' }} 
+            style={{ backgroundSize: '30px 30px' }} 
           />
           
           <div className="relative w-full">
@@ -184,16 +173,18 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
         </div>
 
         <div className="bg-white py-24 sm:py-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <Feature
-                  key={feature.title}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                />
-              ))}
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+              <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-3">
+                {features.map((feature, index) => (
+                  <Feature
+                    key={index}
+                    icon={feature.icon}
+                    title={feature.title}
+                    description={feature.description}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -322,7 +313,7 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
               Support
             </a>
             <button
-              onClick={handleFeedbackOpen}
+              onClick={() => setShowFeedback(true)}
               className="text-gray-500 hover:text-gray-900"
             >
               Feedback
@@ -339,16 +330,12 @@ const LandingPage: React.FC<LandingPageProps> = memo(({ onGetStarted, onLogin })
         </div>
       </footer>
 
-      <Suspense fallback={null}>
-        {showFeedback && (
-          <FeedbackBox onClose={handleFeedbackClose} />
-        )}
-      </Suspense>
+      {showFeedback && (
+        <FeedbackBox onClose={handleFeedbackClose} />
+      )}
     </div>
   );
-});
-
-LandingPage.displayName = 'LandingPage';
+};
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -356,4 +343,4 @@ interface FeatureProps {
   description: string;
 }
 
-export default LandingPage;
+export default memo(LandingPage);

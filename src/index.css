@@ -2,62 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Performance optimizations */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Use hardware acceleration for animations */
-.will-change {
-  will-change: transform, opacity;
-}
-
-/* Mobile-first animations with reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
 @keyframes slide-up {
   from {
-    transform: translate3d(0, 100%, 0);
+    transform: translateY(100%);
     opacity: 0;
   }
   to {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up-mobile {
-  from {
-    transform: translate3d(0, 100vh, 0);
-    opacity: 0;
-  }
-  to {
-    transform: translate3d(0, 0, 0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
 .animate-slide-up {
-  animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
+  animation: slide-up 0.3s ease-out forwards;
 }
 
-@media (max-width: 640px) {
-  .animate-slide-up {
-    animation: slide-up-mobile 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-}
-
-/* Form styles with performance optimizations */
+/* Form styles */
 @layer base {
   [type='text'],
   [type='email'],
@@ -75,56 +35,16 @@
   textarea,
   select {
     @apply w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm;
-    font-size: 16px;
-    -webkit-appearance: none;
-    transform: translateZ(0);
   }
 }
 
-/* Ensure modals are above other content with hardware acceleration */
+/* Ensure modals are above other content */
 .modal-overlay {
   @apply fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm;
   z-index: 40;
-  transform: translateZ(0);
-  will-change: opacity;
 }
 
 .modal-content {
   @apply fixed bg-white rounded-lg shadow-xl;
   z-index: 50;
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .modal-content {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  input, textarea {
-    font-size: 16px !important;
-    transform: translateZ(0);
-  }
-
-  /* Improve touch targets with hardware acceleration */
-  button, a {
-    @apply min-h-[44px] flex items-center justify-center;
-    transform: translateZ(0);
-    -webkit-touch-callout: none;
-  }
-
-  /* Optimize scrolling */
-  .scroll-container {
-    -webkit-overflow-scrolling: touch;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-  }
-}
-
-/* Prevent layout shifts */
-.content-visibility {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 500px;
 }

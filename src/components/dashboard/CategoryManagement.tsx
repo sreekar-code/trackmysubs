@@ -109,15 +109,13 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
       if (fetchError) throw fetchError;
       if (existingCategory) throw new Error('A category with this name already exists');
 
-      const { error: createError } = await supabase
+      const { data, error: createError } = await supabase
         .from('subscription_categories')
-        .insert({
+        .insert([{
           name: newCategoryName.trim(),
           user_id: user.id,
-          is_default: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+          is_default: false
+        }])
         .select()
         .single();
 

@@ -143,8 +143,7 @@ const Dashboard: React.FC = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subscriptions',
-          filter: `user_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
+          table: 'subscriptions'
         },
         () => fetchData()
       )
@@ -164,58 +163,65 @@ const Dashboard: React.FC = () => {
           
           // Only process changes for user's categories or default categories
           const { data: { user } } = await supabase.auth.getUser();
-          if (!payload.new?.is_default && payload.new?.user_id !== user?.id) {
-            return;
-          }
+          if (!user) return;
           
           if (payload.eventType === 'INSERT') {
-            setCategories(prev => {
-              // Check if category already exists to prevent duplicates
-              if (prev.some(cat => cat.id === payload.new.id)) {
-                return prev;
-              }
-              // Add new category and sort
-              return [...prev, {
-                id: payload.new.id,
-                name: payload.new.name,
-                is_default: payload.new.is_default
-              }].sort((a, b) => {
-                if (a.name === 'Other') return 1;
-                if (b.name === 'Other') return -1;
-                return a.name.localeCompare(b.name);
+            // Only add if it's a default category or belongs to the current user
+            if (payload.new.is_default || payload.new.user_id === user.id) {
+              setCategories(prev => {
+                // Check if category already exists to prevent duplicates
+                if (prev.some(cat => cat.id === payload.new.id)) {
+                  return prev;
+                }
+                // Add new category and sort
+                return [...prev, {
+                  id: payload.new.id,
+                  name: payload.new.name,
+                  is_default: payload.new.is_default
+                }].sort((a, b) => {
+                  if (a.name === 'Other') return 1;
+                  if (b.name === 'Other') return -1;
+                  return a.name.localeCompare(b.name);
+                });
               });
-            });
+            }
           } else if (payload.eventType === 'DELETE') {
-            setCategories(prev => prev.filter(cat => cat.id !== payload.old.id));
-            // Update subscriptions to show as uncategorized
-            setSubscriptions(prev => prev.map(sub => {
-              if (sub.category_id === payload.old.id) {
-                return {
-                  ...sub,
-                  category_id: null,
-                  category: undefined
-                };
-              }
-              return sub;
-            }));
+            // Only remove if it's the user's category
+            if (!payload.old.is_default && payload.old.user_id === user.id) {
+              setCategories(prev => prev.filter(cat => cat.id !== payload.old.id));
+              // Update subscriptions that had this category
+              setSubscriptions(prev => prev.map(sub => {
+                if (sub.category_id === payload.old.id) {
+                  return {
+                    ...sub,
+                    category_id: null,
+                    category: undefined
+                  };
+                }
+                return sub;
+              }));
+            }
           } else if (payload.eventType === 'UPDATE') {
-            setCategories(prev => prev.map(cat => 
-              cat.id === payload.new.id ? {
-                ...cat,
-                name: payload.new.name,
-                is_default: payload.new.is_default
-              } : cat
-            ));
-            // Update subscription category names in the UI immediately
-            setSubscriptions(prev => prev.map(sub => {
-              if (sub.category_id === payload.new.id) {
-                return {
-                  ...sub,
-                  category: { name: payload.new.name }
-                };
-              }
-              return sub;
-            }));
+            // Only update if it's a default category or belongs to the current user
+            if (payload.new.is_default || payload.new.user_id === user.id) {
+              setCategories(prev => prev.map(cat => 
+                cat.id === payload.new.id ? {
+                  ...cat,
+                  name: payload.new.name,
+                  is_default: payload.new.is_default
+                } : cat
+              ));
+              // Update subscription category names in the UI immediately
+              setSubscriptions(prev => prev.map(sub => {
+                if (sub.category_id === payload.new.id) {
+                  return {
+                    ...sub,
+                    category: { name: payload.new.name }
+                  };
+                }
+                return sub;
+              }));
+            }
           }
         }
       )

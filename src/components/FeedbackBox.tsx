@@ -26,17 +26,22 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { data, error: submitError } = await supabase
+      const { error: submitError } = await supabase
         .from('feedback')
-        .insert([{
+        .insert({
           message: message.trim(),
           email: email.trim() || null,
-          user_id: user?.id || null
-        }])
-        .select()
-        .single();
+          user_id: user?.id || null,
+          created_at: new Date().toISOString()
+        });
 
-      if (submitError) throw submitError;
+      if (submitError) {
+        console.error('Feedback submission error:', submitError);
+        if (submitError.code === '42501') {
+          throw new Error('Permission denied. Please try again later.');
+        }
+        throw submitError;
+      }
 
       setSuccess(true);
       setMessage('');
@@ -46,10 +51,16 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
       }, 3000);
     } catch (err) {
       console.error('Error submitting feedback:', err);
-      if (err instanceof Error && err.message.includes('rate limit')) {
-        setError('Please wait a moment before submitting more feedback');
+      if (err instanceof Error) {
+        if (err.message.includes('rate limit')) {
+          setError('Please wait a moment before submitting more feedback');
+        } else if (err.message.includes('Permission denied')) {
+          setError('Unable to submit feedback at this time. Please try again later.');
+        } else {
+          setError('Failed to submit feedback. Please try again later.');
+        }
       } else {
-        setError('Failed to submit feedback. Please try again later.');
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);

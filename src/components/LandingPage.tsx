@@ -8,6 +8,10 @@ interface LandingPageProps {
   onLogin: () => void;
 }
 
+interface FeedbackBoxProps {
+  onClose: () => void;
+}
+
 // Memoize Feature component to prevent unnecessary re-renders
 const Feature = memo<FeatureProps>(({ icon, title, description }) => (
   <div className="relative pl-4">

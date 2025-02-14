@@ -12,8 +12,27 @@
     <meta name="description" content="Track all your subscriptions in one place. Manage recurring payments, get reminders, and stay on top of your subscription expenses." />
     <!-- Add cache control -->
     <meta http-equiv="Cache-Control" content="max-age=31536000" />
-    <!-- Umami Analytics -->
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="d953ffb3-08e7-4941-9d21-e8e31ea40dd7"></script>
+    <!-- Umami Analytics with error handling and caching -->
+    <script>
+      // Error handling wrapper for Umami
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+        if (url && url.includes('umami')) {
+          console.warn('Umami error:', msg);
+          return true; // Prevent default error handling for Umami errors
+        }
+        return false; // Let other errors propagate
+      };
+    </script>
+    <script 
+      defer 
+      src="https://cloud.umami.is/script.js" 
+      data-website-id="d953ffb3-08e7-4941-9d21-e8e31ea40dd7"
+      data-cache="true"
+      data-auto-track="false"
+      data-do-not-track="true"
+      crossorigin="anonymous"
+      onerror="console.warn('Failed to load analytics')"
+    ></script>
   </head>
   <body>
     <div id="root"></div>

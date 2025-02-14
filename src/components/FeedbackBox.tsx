@@ -72,12 +72,12 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
       {/* Overlay */}
       <div className="modal-overlay" onClick={onClose} />
       
-      {/* Feedback Box */}
-      <div className="modal-content bottom-4 right-4 w-full max-w-md p-6 animate-slide-up">
+      {/* Feedback Box - Mobile optimized */}
+      <div className="modal-content fixed sm:bottom-4 sm:right-4 bottom-0 right-0 w-full sm:w-[440px] max-w-full bg-white rounded-lg sm:rounded-lg shadow-xl p-4 sm:p-6 animate-slide-up">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center">
             <MessageCircle className="h-5 w-5 text-blue-500 mr-2" />
-            <h3 className="text-lg font-medium text-gray-900">Share Your Feedback</h3>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900">Share Your Feedback</h3>
           </div>
           <button
             onClick={onClose}
@@ -112,7 +112,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
-                className="resize-none"
+                className="resize-none w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Tell us what you think..."
                 maxLength={1000}
                 disabled={loading}
@@ -131,6 +131,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="your@email.com"
                 disabled={loading}
               />
@@ -142,7 +143,7 @@ const FeedbackBox: React.FC<FeedbackBoxProps> = ({ onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full flex justify-center py-3 sm:py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {loading ? (
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

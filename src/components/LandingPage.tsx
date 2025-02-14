@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { CreditCard, Clock, DollarSign, Zap, Tag, Globe, BarChart, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FeedbackBox from './FeedbackBox';
@@ -74,7 +74,50 @@ const features = [
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
   const currentYear = new Date().getFullYear();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [hasFeedbackShown, setHasFeedbackShown] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
   
+  useEffect(() => {
+    // Check if feedback has been shown in this session
+    const hasShown = sessionStorage.getItem('feedbackShown');
+    if (hasShown) {
+      setHasFeedbackShown(true);
+    }
+
+    // Set up intersection observer for automatic feedback trigger
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !hasFeedbackShown) {
+          setTimeout(() => {
+            setShowFeedback(true);
+            setHasFeedbackShown(true);
+            sessionStorage.setItem('feedbackShown', 'true');
+          }, 1000); // Delay of 1 second after scrolling to the trigger point
+        }
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the element is visible
+      }
+    );
+
+    if (triggerRef.current) {
+      observer.observe(triggerRef.current);
+    }
+
+    return () => {
+      if (triggerRef.current) {
+        observer.unobserve(triggerRef.current);
+      }
+    };
+  }, [hasFeedbackShown]);
+
+  const handleFeedbackClose = () => {
+    setShowFeedback(false);
+    setHasFeedbackShown(true);
+    sessionStorage.setItem('feedbackShown', 'true');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
@@ -145,6 +188,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
             </div>
           </div>
         </div>
+
+        <div ref={triggerRef} className="h-1" aria-hidden="true" />
 
         <div className="bg-gray-50 py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -286,7 +331,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
       </footer>
 
       {showFeedback && (
-        <FeedbackBox onClose={() => setShowFeedback(false)} />
+        <FeedbackBox onClose={handleFeedbackClose} />
       )}
     </div>
   );

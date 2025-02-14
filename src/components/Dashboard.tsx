@@ -169,12 +169,19 @@ const Dashboard: React.FC = () => {
           }
           
           if (payload.eventType === 'INSERT') {
-            const newCategory = payload.new as Category;
-            setCategories(prev => [...prev, newCategory].sort((a, b) => {
-              if (a.name === 'Other') return 1;
-              if (b.name === 'Other') return -1;
-              return a.name.localeCompare(b.name);
-            }));
+            setCategories(prev => {
+              // Check if category already exists to prevent duplicates
+              if (prev.some(cat => cat.id === payload.new.id)) {
+                return prev;
+              }
+              // Add new category and sort
+              const newCategories = [...prev, payload.new].sort((a, b) => {
+                if (a.name === 'Other') return 1;
+                if (b.name === 'Other') return -1;
+                return a.name.localeCompare(b.name);
+              });
+              return newCategories;
+            });
           } else if (payload.eventType === 'DELETE') {
             setCategories(prev => prev.filter(cat => cat.id !== payload.old.id));
             // Update subscriptions to show as uncategorized
@@ -253,8 +260,28 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      await categoryOperations.deleteCategory(categoryId);
-      // No need to call fetchData here as the real-time subscription will handle it
+      const { error } = await supabase
+        .from('subscription_categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('is_default', false) // Only allow deletion of non-default categories
+        .single();
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      // Update subscriptions that had this category
+      setSubscriptions(prev => prev.map(sub => {
+        if (sub.category_id === categoryId) {
+          return {
+            ...sub,
+            category_id: null,
+            category: undefined
+          };
+        }
+        return sub;
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete category');
     }

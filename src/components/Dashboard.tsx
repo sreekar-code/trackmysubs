@@ -267,14 +267,23 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      const { error } = await supabase
+      // First, update all subscriptions that use this category to have no category
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({ category_id: null })
+        .eq('category_id', categoryId);
+
+      if (updateError) throw updateError;
+
+      // Then delete the category
+      const { error: deleteError } = await supabase
         .from('subscription_categories')
         .delete()
         .eq('id', categoryId)
         .eq('is_default', false) // Only allow deletion of non-default categories
         .single();
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       // Update local state immediately
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));

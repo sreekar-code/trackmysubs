@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { X, Tag, Trash2, Edit2, Check, XCircle, Plus } from 'lucide-react';
-import { categoryOperations } from '../../lib/supabase';
 import { supabase } from '../../lib/supabase';
 
 interface Category {
@@ -54,7 +53,28 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
 
     setLoading(true);
     try {
-      await categoryOperations.updateCategory(categoryId, editedName);
+      const { data: existingCategory, error: fetchError } = await supabase
+        .from('subscription_categories')
+        .select('id')
+        .eq('name', editedName.trim())
+        .neq('id', categoryId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (existingCategory) throw new Error('A category with this name already exists');
+
+      const { error: updateError } = await supabase
+        .from('subscription_categories')
+        .update({ 
+          name: editedName.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', categoryId)
+        .eq('is_default', false)
+        .single();
+
+      if (updateError) throw updateError;
+
       setEditingCategory(null);
       setEditedName('');
       setError(null);
@@ -89,15 +109,15 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
       if (fetchError) throw fetchError;
       if (existingCategory) throw new Error('A category with this name already exists');
 
-      const { data, error: createError } = await supabase
+      const { error: createError } = await supabase
         .from('subscription_categories')
-        .insert([{
+        .insert({
           name: newCategoryName.trim(),
           user_id: user.id,
           is_default: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }])
+        })
         .select()
         .single();
 

@@ -69,6 +69,7 @@ const features = [
 
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
   const currentYear = new Date().getFullYear();
+  const [showFeedback, setShowFeedback] = useState(false);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -262,6 +263,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
             >
               Support
             </a>
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="text-gray-500 hover:text-gray-900"
+            >
+              Feedback
+            </button>
           </nav>
           <div className="flex flex-col items-center">
             <p className="text-center text-gray-500 text-sm">
@@ -273,6 +280,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
           </div>
         </div>
       </footer>
+
+      {showFeedback && (
+        <FeedbackBox onClose={() => setShowFeedback(false)} />
+      )}
     </div>
   );
 };

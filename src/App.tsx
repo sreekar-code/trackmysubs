@@ -39,6 +39,10 @@ const AuthCallback = lazy(() =>
 );
 
 // Lazy load the new pages
+const Blog = lazy(() =>
+  import(/* webpackChunkName: "blog" */ './pages/Blog')
+);
+
 const Terms = lazy(() =>
   import(/* webpackChunkName: "terms" */ './pages/Terms')
 );
@@ -180,6 +184,7 @@ function App() {
             path="/analytics"
             element={session ? <Analytics /> : <Navigate to="/" replace />}
           />
+          <Route path="/blog" element={<Blog />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/terms" element={<Terms />} />

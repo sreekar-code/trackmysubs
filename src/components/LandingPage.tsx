@@ -299,6 +299,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
       <footer className="bg-white border-t border-gray-100">
         <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
           <nav className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <Link to="/blog" className="text-sm text-gray-500 hover:text-gray-900">
+              Blog
+            </Link>
             <Link to="/terms" className="text-sm text-gray-500 hover:text-gray-900">
               Terms & Conditions
             </Link>

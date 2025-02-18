@@ -15,7 +15,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     if (!user) throw new Error('User not found');
 
     // Create payment session with Dodo Payments
-    const response = await fetch('https://api.dodopayments.com/v1/payment-sessions', {
+    const response = await fetch('https://test.dodopayments.com/v1/payment-sessions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

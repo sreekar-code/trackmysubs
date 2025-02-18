@@ -1,20 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { handlePaymentSuccess } from '../lib/payments';
 import { CheckCircle } from 'lucide-react';
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
     const processPayment = async () => {
       try {
+        const sessionId = searchParams.get('session_id');
+        if (!sessionId) {
+          throw new Error('No session ID found');
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
-        
         if (!user) {
           throw new Error('User not authenticated');
+        }
+
+        // Verify the payment session with Dodo Payments
+        const response = await fetch(`https://api.dodopayments.com/v1/payment-sessions/${sessionId}`, {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to verify payment session');
+        }
+
+        const session = await response.json();
+        if (session.status !== 'completed') {
+          throw new Error('Payment not completed');
         }
 
         const success = await handlePaymentSuccess(user.id);
@@ -22,6 +44,7 @@ const PaymentSuccess: React.FC = () => {
           throw new Error('Failed to process payment');
         }
 
+        setIsProcessing(false);
         // Redirect to analytics after 3 seconds
         setTimeout(() => {
           navigate('/analytics');
@@ -29,21 +52,24 @@ const PaymentSuccess: React.FC = () => {
       } catch (err) {
         console.error('Payment processing error:', err);
         setError(err instanceof Error ? err.message : 'Failed to process payment');
+        setIsProcessing(false);
       }
     };
 
     processPayment();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Payment Successful!
+          {isProcessing ? 'Processing Payment...' : 'Payment Successful!'}
         </h1>
         <p className="text-gray-600 mb-6">
-          Thank you for upgrading to Premium. You now have access to all analytics features.
+          {isProcessing 
+            ? 'Please wait while we confirm your payment...'
+            : 'Thank you for upgrading to Premium. You now have access to all analytics features.'}
         </p>
         {error ? (
           <>
@@ -57,7 +83,9 @@ const PaymentSuccess: React.FC = () => {
           </>
         ) : (
           <p className="text-sm text-gray-500">
-            Redirecting you to analytics in a few seconds...
+            {isProcessing 
+              ? 'This may take a few moments...'
+              : 'Redirecting you to analytics in a few seconds...'}
           </p>
         )}
       </div>

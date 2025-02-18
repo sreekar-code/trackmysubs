@@ -22,7 +22,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.REACT_APP_DODO_API_KEY}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
       },
       body: JSON.stringify({
         amount: 1000, // $10.00 in cents
@@ -35,13 +35,14 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
           userId: userId,
           plan: 'premium',
         },
-        success_url: `${window.location.origin}/payment/success`,
+        success_url: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${window.location.origin}/payment/cancel`,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create payment session');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create payment session');
     }
 
     const session = await response.json();
@@ -70,8 +71,9 @@ export const handlePaymentSuccess = async (userId: string): Promise<boolean> => 
       .update({
         subscription_status: 'premium',
         has_lifetime_access: false,
-        subscription_start: new Date().toISOString(),
-        subscription_end: oneYear.toISOString(),
+        subscription_start_date: new Date().toISOString(),
+        subscription_end_date: oneYear.toISOString(),
+        updated_at: new Date().toISOString()
       })
       .eq('user_id', userId);
 

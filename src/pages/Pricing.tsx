@@ -4,12 +4,14 @@ import { Check } from 'lucide-react';
 import { useUserAccess } from '../hooks/useUserAccess';
 import { supabase } from '../lib/supabase';
 import { initializePayment } from '../lib/payments';
+import Auth from '../components/Auth';
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const { access, loading } = useUserAccess();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleUpgrade = async () => {
     try {
@@ -19,7 +21,8 @@ const Pricing: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error('User not authenticated');
+        setShowAuth(true);
+        return;
       }
 
       const { success, error: paymentError, paymentUrl } = await initializePayment(user.id);
@@ -44,6 +47,19 @@ const Pricing: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-md mx-auto pt-12">
+          <Auth onSignIn={() => {
+            setShowAuth(false);
+            handleUpgrade();
+          }} />
         </div>
       </div>
     );

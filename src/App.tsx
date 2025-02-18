@@ -7,6 +7,9 @@ import { useAnalytics } from './hooks/useAnalytics';
 import AnalyticsGuard from './components/AnalyticsGuard';
 import RequireAuth from './components/RequireAuth';
 import LoadingSpinner from './components/LoadingSpinner';
+import Pricing from './pages/Pricing';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 
 // Preload critical components
 const preloadComponent = (factory: () => Promise<any>) => {
@@ -201,6 +204,9 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="*" element={<NotFound />} />
           <Route path="/404" element={<NotFound />} />
         </Routes>

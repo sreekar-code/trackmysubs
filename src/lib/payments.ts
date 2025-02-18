@@ -14,26 +14,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     if (userError) throw userError;
     if (!user) throw new Error('User not found');
 
-    // Get or create profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email, full_name')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      // If profile doesn't exist, create it
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert([{ 
-          id: user.id, 
-          email: user.email 
-        }]);
-      
-      if (insertError) throw insertError;
-    }
-
-    // Create a payment session with Dodo Payments
+    // Create payment session with Dodo Payments
     const response = await fetch('https://payments.dodopayments.com/v1/payment-sessions', {
       method: 'POST',
       headers: {
@@ -45,7 +26,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
         currency: 'USD',
         customer: {
           email: user.email,
-          name: profile?.full_name || user.email,
+          name: user.email, // Use email as name if profile doesn't exist
         },
         metadata: {
           userId: user.id,

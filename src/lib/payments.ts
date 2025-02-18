@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Database } from './database.types';
 
 interface PaymentResponse {
   success: boolean;
@@ -8,14 +9,29 @@ interface PaymentResponse {
 
 export const initializePayment = async (userId: string): Promise<PaymentResponse> => {
   try {
-    // Get the user's profile
+    // First get the user's email from auth.users
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('User not found');
+
+    // Get or create profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('email, full_name')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      // If profile doesn't exist, create it
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ 
+          id: user.id, 
+          email: user.email 
+        }]);
+      
+      if (insertError) throw insertError;
+    }
 
     // Create a payment session with Dodo Payments
     const response = await fetch('https://payments.dodopayments.com/v1/payment-sessions', {
@@ -28,11 +44,11 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
         amount: 1000, // $10.00 in cents
         currency: 'USD',
         customer: {
-          email: profile.email,
-          name: profile.full_name || profile.email,
+          email: user.email,
+          name: profile?.full_name || user.email,
         },
         metadata: {
-          userId: userId,
+          userId: user.id,
           plan: 'premium',
         },
         success_url: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -74,7 +90,7 @@ export const handlePaymentSuccess = async (userId: string): Promise<boolean> => 
     const { error: updateError } = await supabase
       .from('user_access')
       .update({
-        subscription_status: 'premium',
+        subscription_status: 'premium' as const,
         has_lifetime_access: false,
         subscription_start_date: new Date().toISOString(),
         subscription_end_date: oneYear.toISOString(),

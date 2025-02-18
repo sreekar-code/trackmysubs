@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
+import type { Database } from './database.types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -44,33 +44,10 @@ const customStorage = {
   }
 };
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storage: customStorage,
-    storageKey: 'supabase.auth.token',
-    flowType: 'pkce'
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'Cache-Control': 'public, max-age=3600'
-    }
-  },
-  // Enforce SSL
-  ssl: {
-    rejectUnauthorized: true
-  }
-});
+export const supabase = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+);
 
 // Initialize session recovery with debounced auth state changes
 let authStateTimeout: NodeJS.Timeout;

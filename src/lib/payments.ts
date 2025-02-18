@@ -11,14 +11,14 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     // Get the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('email, full_name')
       .eq('id', userId)
       .single();
 
     if (profileError) throw profileError;
 
     // Create a payment session with Dodo Payments
-    const response = await fetch('https://api.dodopayments.com/v1/payment-sessions', {
+    const response = await fetch('https://payments.dodopayments.com/v1/payment-sessions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,8 +41,13 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create payment session');
+      const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+      console.error('Payment API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(errorData.message || `Payment API error: ${response.status} ${response.statusText}`);
     }
 
     const session = await response.json();

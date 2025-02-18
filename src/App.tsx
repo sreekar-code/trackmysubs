@@ -4,6 +4,9 @@ import NotFound from './components/NotFound';
 import { supabase } from './lib/supabase';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { useAnalytics } from './hooks/useAnalytics';
+import AnalyticsGuard from './components/AnalyticsGuard';
+import RequireAuth from './components/RequireAuth';
+import LoadingSpinner from './components/LoadingSpinner';
 
 // Preload critical components
 const preloadComponent = (factory: () => Promise<any>) => {
@@ -22,7 +25,7 @@ const Dashboard = preloadComponent(() =>
   import(/* webpackChunkName: "dashboard" */ './components/Dashboard')
 );
 
-const Analytics = lazy(() =>
+const Analytics = preloadComponent(() =>
   import(/* webpackChunkName: "analytics" */ './components/Analytics')
 );
 
@@ -182,7 +185,15 @@ function App() {
           />
           <Route
             path="/analytics"
-            element={session ? <Analytics /> : <Navigate to="/" replace />}
+            element={
+              <RequireAuth>
+                <AnalyticsGuard>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Analytics />
+                  </Suspense>
+                </AnalyticsGuard>
+              </RequireAuth>
+            }
           />
           <Route path="/blog" element={<Blog />} />
           <Route path="/reset-password" element={<ResetPassword />} />

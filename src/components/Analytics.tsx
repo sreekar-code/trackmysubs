@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useUserAccess } from '../hooks/useUserAccess';
 import { convertCurrency } from '../utils/currencyConverter';
 import { BarChart, LineChart, PieChart, Calendar, Clock, LayoutDashboard } from 'lucide-react';
 import { Line, Bar, Pie } from 'react-chartjs-2';
@@ -49,6 +50,7 @@ interface Subscription {
 type ViewType = 'graphs' | 'calendar' | 'timeline';
 
 const Analytics: React.FC = () => {
+  const { access, loading: accessLoading, error: accessError, hasAnalyticsAccess } = useUserAccess();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,12 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
+      if (!hasAnalyticsAccess()) {
+        setError('You do not have access to analytics. Please upgrade your subscription.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('subscriptions')
@@ -106,7 +114,7 @@ const Analytics: React.FC = () => {
     };
 
     fetchSubscriptions();
-  }, []);
+  }, [hasAnalyticsAccess]);
 
   const calculateMonthlyPrice = async (price: number, billingCycle: string, fromCurrency: string): Promise<number> => {
     let monthlyPrice = price;
@@ -209,13 +217,43 @@ const Analytics: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (accessLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!hasAnalyticsAccess()) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader
+          onAddNew={() => navigate('/')}
+          onSignOut={handleSignOut}
+          showMobileMenu={showMobileMenu}
+          setShowMobileMenu={setShowMobileMenu}
+          onManageCategories={() => navigate('/')}
+        />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Analytics Access Required</h2>
+            <p className="text-gray-600 mb-6">
+              {access?.subscription_status === 'trial' 
+                ? 'Your trial period has ended. Please upgrade your subscription to access analytics.'
+                : 'Please upgrade your subscription to access analytics features.'}
+            </p>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </main>
       </div>
     );
   }

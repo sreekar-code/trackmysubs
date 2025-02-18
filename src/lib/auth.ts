@@ -22,6 +22,27 @@ export const signUp = async (email: string, password: string) => {
   // Initialize profile for new user
   if (data.user) {
     await initializeUserProfile(data.user.id);
+    
+    // Create user access record with trial period
+    const trialStartDate = new Date();
+    const trialEndDate = new Date(trialStartDate);
+    trialEndDate.setDate(trialEndDate.getDate() + 7); // 7-day trial
+
+    const { error: accessError } = await supabase
+      .from('user_access')
+      .insert({
+        user_id: data.user.id,
+        user_type: 'new',
+        has_lifetime_access: false,
+        subscription_status: 'trial',
+        trial_start_date: trialStartDate.toISOString(),
+        trial_end_date: trialEndDate.toISOString()
+      });
+
+    if (accessError) {
+      console.error('Error creating user access record:', accessError);
+      throw new Error('Failed to initialize user access');
+    }
   }
 
   return data;

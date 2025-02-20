@@ -12,6 +12,17 @@ interface UserAccess {
   subscription_end_date: string | null;
 }
 
+interface UserAccessDetails {
+  hasFullAccess: boolean;      // Whether user has access to all features
+  showPricing: boolean;        // Whether to show pricing options
+  showAnalytics: boolean;      // Whether to show analytics option
+  isLifetimeUser: boolean;     // Whether user has lifetime access
+  trialStatus: {
+    isInTrial: boolean;
+    daysLeft: number;
+  };
+}
+
 export function useUserAccess() {
   const [access, setAccess] = useState<UserAccess | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,11 +138,70 @@ export function useUserAccess() {
     };
   };
 
+  // Add a helper to determine user access details
+  const getUserAccessDetails = (): UserAccessDetails => {
+    if (!access) {
+      return {
+        hasFullAccess: false,
+        showPricing: true,
+        showAnalytics: false,
+        isLifetimeUser: false,
+        trialStatus: { isInTrial: false, daysLeft: 0 }
+      };
+    }
+
+    // Handle existing users with lifetime access
+    if (access.has_lifetime_access) {
+      return {
+        hasFullAccess: true,
+        showPricing: false,      // Never show pricing for lifetime users
+        showAnalytics: true,     // Always show analytics for lifetime users
+        isLifetimeUser: true,
+        trialStatus: { isInTrial: false, daysLeft: 0 }
+      };
+    }
+
+    // Handle premium users
+    if (access.subscription_status === 'premium') {
+      return {
+        hasFullAccess: true,
+        showPricing: false,      // Don't show pricing for premium users
+        showAnalytics: true,
+        isLifetimeUser: false,
+        trialStatus: { isInTrial: false, daysLeft: 0 }
+      };
+    }
+
+    // Get trial status
+    const trialStatus = getTrialStatus();
+
+    // Handle trial users
+    if (access.subscription_status === 'trial') {
+      return {
+        hasFullAccess: trialStatus.isInTrial,
+        showPricing: true,       // Show pricing during trial
+        showAnalytics: trialStatus.isInTrial,
+        isLifetimeUser: false,
+        trialStatus
+      };
+    }
+
+    // Handle free users (non-lifetime)
+    return {
+      hasFullAccess: false,
+      showPricing: true,
+      showAnalytics: false,
+      isLifetimeUser: false,
+      trialStatus: { isInTrial: false, daysLeft: 0 }
+    };
+  };
+
   return {
     access,
     loading,
     error,
     hasAnalyticsAccess,
-    getTrialStatus
+    getTrialStatus,
+    getUserAccessDetails
   };
 } 

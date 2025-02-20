@@ -191,7 +191,7 @@ function App() {
           <Route
             path="/analytics"
             element={
-              <RequireAuth>
+              <RequireAuth requireAnalytics>
                 <AnalyticsGuard>
                   <Suspense fallback={<LoadingSpinner />}>
                     <Analytics />

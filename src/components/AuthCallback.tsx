@@ -45,27 +45,28 @@ const AuthCallback: React.FC = () => {
           throw new Error('No user data in session');
         }
 
-        // Set the session in Supabase
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-
-        // Get user creation date
+        // Get user data
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
         if (!user) throw new Error('User not found');
 
-        const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+        // Wait a short moment to ensure the user is fully created in the database
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Create user access record if it doesn't exist
-        const { data: existingAccess } = await supabase
+        // Check if user access record already exists
+        const { data: existingAccess, error: accessError } = await supabase
           .from('user_access')
           .select('id')
           .eq('user_id', user.id)
           .single();
 
+        if (accessError && accessError.code !== 'PGRST116') {
+          throw accessError;
+        }
+
+        // Only create access record if it doesn't exist
         if (!existingAccess) {
+          const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
           trialEndDate.setDate(trialEndDate.getDate() + 7);

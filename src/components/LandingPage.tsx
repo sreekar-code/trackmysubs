@@ -8,8 +8,10 @@ interface LandingPageProps {
   onLogin: () => void;
 }
 
-interface FeedbackBoxProps {
-  onClose: () => void;
+interface FeatureProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
 }
 
 // Memoize Feature component to prevent unnecessary re-renders
@@ -141,7 +143,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
         </div>
       </nav>
 
-      <main className="flex-grow flex flex-col">
+      <main className="flex-grow">
+        {/* Hero Section */}
         <div className="relative flex-grow flex items-center justify-center bg-gradient-to-b from-white to-blue-50">
           <div 
             className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,transparent)] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,white,transparent)]" 
@@ -174,6 +177,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
           </div>
         </div>
 
+        {/* Features Section */}
         <div className="bg-white py-16 sm:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
@@ -193,6 +197,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
 
         <div ref={triggerRef} className="h-1" aria-hidden="true" />
 
+        {/* Pricing Section */}
         <div className="bg-gray-50 py-16 sm:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-4xl text-center">
@@ -291,21 +296,46 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
         {showFeedback && <FeedbackBox onClose={handleFeedbackClose} />}
       </main>
 
-      <footer className="bg-white border-t border-gray-100 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
-            © {currentYear} trackmysubs.in. All rights reserved.
-          </p>
+      <footer className="bg-white border-t border-gray-100 mt-auto">
+        <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+          <nav className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <Link to="/blog" className="text-sm text-gray-500 hover:text-gray-900">
+              Blog
+            </Link>
+            <Link to="/terms" className="text-sm text-gray-500 hover:text-gray-900">
+              Terms & Conditions
+            </Link>
+            <Link to="/privacy" className="text-sm text-gray-500 hover:text-gray-900">
+              Privacy Policy
+            </Link>
+            <Link to="/refund" className="text-sm text-gray-500 hover:text-gray-900">
+              Refund Policy
+            </Link>
+            <a 
+              href="mailto:trackmysubs.in@gmail.com" 
+              className="text-sm text-gray-500 hover:text-gray-900"
+            >
+              Support
+            </a>
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="text-sm text-gray-500 hover:text-gray-900"
+            >
+              Feedback
+            </button>
+          </nav>
+          <div className="flex flex-col items-center">
+            <p className="text-center text-xs sm:text-sm text-gray-500">
+              © {currentYear} trackmysubs.in. All rights reserved.
+            </p>
+            <p className="mt-2 text-center text-xs sm:text-sm text-gray-500">
+              Contact us: <a href="mailto:trackmysubs.in@gmail.com" className="text-blue-600 hover:text-blue-800">trackmysubs.in@gmail.com</a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>
   );
 };
-
-interface FeatureProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
 
 export default memo(LandingPage);

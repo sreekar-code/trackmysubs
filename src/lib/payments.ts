@@ -15,15 +15,17 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     if (!user) throw new Error('User not found');
 
     // Create payment session with Dodo Payments
-    const response = await fetch('https://test.dodopayments.com/v1/payment-sessions', {
+    const response = await fetch('https://live.dodopayments.com/v1/payment-sessions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
+        'Origin': window.location.origin,
       },
+      mode: 'cors',
+      credentials: 'same-origin',
       body: JSON.stringify({
-        amount: 1000, // $10.00 in cents
-        currency: 'USD',
+        product_id: import.meta.env.VITE_DODO_PRODUCT_ID,
         customer: {
           email: user.email,
           name: user.email, // Use email as name if profile doesn't exist

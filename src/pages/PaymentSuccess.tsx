@@ -24,10 +24,13 @@ const PaymentSuccess: React.FC = () => {
         }
 
         // Verify the payment session with Dodo Payments
-        const response = await fetch(`https://api.dodopayments.com/v1/payment-sessions/${sessionId}`, {
+        const response = await fetch(`https://live.dodopayments.com/v1/payment-sessions/${sessionId}`, {
           headers: {
             'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
+            'Origin': window.location.origin,
           },
+          mode: 'cors',
+          credentials: 'same-origin',
         });
 
         if (!response.ok) {

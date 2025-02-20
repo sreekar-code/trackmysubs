@@ -51,40 +51,29 @@ const AuthCallback: React.FC = () => {
           refresh_token: data.session.refresh_token
         });
 
-        // Check if this is a new user by looking up their access record
-        const { data: accessData, error: accessError } = await supabase
+        // Get user creation date
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (!user) throw new Error('User not found');
+
+        const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+
+        // Create user access record if it doesn't exist
+        const { data: existingAccess } = await supabase
           .from('user_access')
-          .select('*')
-          .eq('user_id', data.session.user.id)
+          .select('id')
+          .eq('user_id', user.id)
           .single();
 
-        if (accessError && accessError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-          throw accessError;
-        }
-
-        // Check user creation date to determine if they're an existing user
-        const { data: userData, error: userError } = await supabase
-          .from('auth.users')
-          .select('created_at')
-          .eq('id', data.session.user.id)
-          .single();
-
-        if (userError) {
-          throw userError;
-        }
-
-        const isExistingUser = userData && new Date(userData.created_at) < new Date('2024-02-01');
-
-        if (!accessData) {
-          // Create user access record
+        if (!existingAccess) {
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
-          trialEndDate.setDate(trialEndDate.getDate() + 7); // 7-day trial
+          trialEndDate.setDate(trialEndDate.getDate() + 7);
 
           const { error: insertError } = await supabase
             .from('user_access')
             .insert({
-              user_id: data.session.user.id,
+              user_id: user.id,
               user_type: isExistingUser ? 'existing' : 'new',
               has_lifetime_access: isExistingUser,
               subscription_status: isExistingUser ? 'free' : 'trial',
@@ -95,17 +84,18 @@ const AuthCallback: React.FC = () => {
             });
 
           if (insertError) {
-            throw insertError;
+            console.error('Error creating user access:', insertError);
+            throw new Error('Failed to create user access record');
           }
         }
 
-        // Navigate to dashboard with replace to prevent back button issues
+        // Navigate to dashboard
         navigate('/dashboard', { replace: true });
       } catch (err) {
         console.error('Error in auth callback:', err);
         navigate('/', {
           replace: true,
-          state: { error: 'Failed to authenticate. Please try again.' }
+          state: { error: err instanceof Error ? err.message : 'Failed to authenticate' }
         });
       }
     };

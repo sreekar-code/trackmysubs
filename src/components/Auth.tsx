@@ -25,51 +25,23 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
 
     try {
       if (isLogin) {
-        const { user, session, error: signInError } = await signIn(email, password);
+        const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
         if (signInError) throw signInError;
-        if (user) {
-          // Check if user has access record
-          const { data: accessData, error: accessError } = await supabase
-            .from('user_access')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+        if (!user) throw new Error('No user data returned');
 
-          if (accessError && accessError.code !== 'PGRST116') {
-            throw accessError;
-          }
+        // Check if user has access record
+        const { data: existingAccess } = await supabase
+          .from('user_access')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
 
-          // If no access record exists, create one
-          if (!accessData) {
-            const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
-            const trialStartDate = new Date();
-            const trialEndDate = new Date(trialStartDate);
-            trialEndDate.setDate(trialEndDate.getDate() + 7);
-
-            const { error: insertError } = await supabase
-              .from('user_access')
-              .insert({
-                user_id: user.id,
-                user_type: isExistingUser ? 'existing' : 'new',
-                has_lifetime_access: isExistingUser,
-                subscription_status: isExistingUser ? 'free' : 'trial',
-                trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
-                trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-
-            if (insertError) throw insertError;
-          }
-
-          onSignIn();
-          navigate('/dashboard', { replace: true });
-        }
-      } else {
-        const { user, session, error: signUpError } = await signUp(email, password);
-        if (signUpError) throw signUpError;
-        if (user) {
-          // Create access record for new user
+        if (!existingAccess) {
+          const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
           trialEndDate.setDate(trialEndDate.getDate() + 7);
@@ -78,20 +50,57 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
             .from('user_access')
             .insert({
               user_id: user.id,
-              user_type: 'new',
-              has_lifetime_access: false,
-              subscription_status: 'trial',
-              trial_start_date: trialStartDate.toISOString(),
-              trial_end_date: trialEndDate.toISOString(),
+              user_type: isExistingUser ? 'existing' : 'new',
+              has_lifetime_access: isExistingUser,
+              subscription_status: isExistingUser ? 'free' : 'trial',
+              trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+              trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
 
-          if (insertError) throw insertError;
-
-          onSignIn();
-          navigate('/dashboard', { replace: true });
+          if (insertError) {
+            console.error('Error creating user access:', insertError);
+            throw new Error('Failed to create user access record');
+          }
         }
+
+        onSignIn();
+        navigate('/dashboard', { replace: true });
+      } else {
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password
+        });
+        
+        if (signUpError) throw signUpError;
+        if (!user) throw new Error('No user data returned');
+
+        // Create access record for new user
+        const trialStartDate = new Date();
+        const trialEndDate = new Date(trialStartDate);
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+        const { error: insertError } = await supabase
+          .from('user_access')
+          .insert({
+            user_id: user.id,
+            user_type: 'new',
+            has_lifetime_access: false,
+            subscription_status: 'trial',
+            trial_start_date: trialStartDate.toISOString(),
+            trial_end_date: trialEndDate.toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error('Error creating user access:', insertError);
+          throw new Error('Failed to create user access record');
+        }
+
+        onSignIn();
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       console.error('Auth error:', err);

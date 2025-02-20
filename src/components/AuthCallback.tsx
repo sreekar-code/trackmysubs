@@ -47,19 +47,8 @@ const AuthCallback: React.FC = () => {
           throw new Error('No user data in session');
         }
 
-        // Set session explicitly
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-
-        if (setSessionError) {
-          console.error('Set session error:', setSessionError);
-          throw setSessionError;
-        }
-
-        // Wait for session to be set
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Get user data
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -72,24 +61,26 @@ const AuthCallback: React.FC = () => {
           throw new Error('User not found');
         }
 
-        console.log('User retrieved successfully:', { id: user.id, email: user.email });
+        console.log('Creating access record for user:', {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at
+        });
 
         // Check if user access record already exists
-        const { data: existingAccess, error: accessError } = await supabase
+        const { data: existingAccess, error: accessCheckError } = await supabase
           .from('user_access')
-          .select('*')
+          .select('id')
           .eq('user_id', user.id)
           .single();
 
-        if (accessError && accessError.code !== 'PGRST116') {
-          console.error('Access check error:', accessError);
-          throw accessError;
+        if (accessCheckError && accessCheckError.code !== 'PGRST116') {
+          console.error('Error checking existing access:', accessCheckError);
+          throw accessCheckError;
         }
 
         // Only create access record if it doesn't exist
         if (!existingAccess) {
-          console.log('Creating new user access record for:', user.id);
-          
           const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
@@ -106,20 +97,25 @@ const AuthCallback: React.FC = () => {
             updated_at: new Date().toISOString()
           };
 
-          console.log('Attempting to insert access record:', accessData);
+          console.log('Inserting new access record:', accessData);
 
           const { error: insertError } = await supabase
             .from('user_access')
             .insert([accessData]);
 
           if (insertError) {
-            console.error('Insert error:', insertError);
+            console.error('Error creating access record:', {
+              error: insertError,
+              code: insertError.code,
+              details: insertError.details,
+              hint: insertError.hint
+            });
             throw new Error(`Failed to create user access record: ${insertError.message}`);
           }
 
           console.log('Access record created successfully');
         } else {
-          console.log('Access record already exists:', existingAccess);
+          console.log('Access record already exists for user');
         }
 
         // Navigate to dashboard

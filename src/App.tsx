@@ -78,11 +78,12 @@ function App() {
   // Add function to handle login
   const handleLogin = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // If user is already logged in, redirect to dashboard
-        setSession(session);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession) {
+        // If user is already logged in, update session and redirect to dashboard
+        setSession(currentSession);
         trackEvent('user_login', { method: 'auto' });
+        setShowAuth(false);
       } else {
         // If not logged in, show auth modal
         setShowAuth(true);
@@ -104,12 +105,13 @@ function App() {
           setTimeout(() => reject(new Error('Session check timeout')), 5000)
         );
         
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+        const { data: { session: currentSession } } = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (mounted) {
-          setSession(session);
-          if (session) {
+          setSession(currentSession);
+          if (currentSession) {
             trackEvent('session_restored');
+            setShowAuth(false);
           }
           setLoading(false);
         }

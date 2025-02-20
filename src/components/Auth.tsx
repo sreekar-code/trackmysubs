@@ -24,16 +24,18 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
 
     try {
       if (isLogin) {
-        const { user } = await signIn(email, password);
+        const { user, error: signInError } = await signIn(email, password);
+        if (signInError) throw signInError;
         if (user) {
           onSignIn();
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
         }
       } else {
-        const { user } = await signUp(email, password);
+        const { user, error: signUpError } = await signUp(email, password);
+        if (signUpError) throw signUpError;
         if (user) {
           onSignIn();
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
         }
       }
     } catch (err) {
@@ -48,12 +50,13 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
-      // The OAuth flow will handle the redirect automatically
-      // The callback will redirect to /dashboard
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      // Don't navigate here - let the OAuth callback handle it
     } catch (err) {
       console.error('Google auth error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');
+    } finally {
       setLoading(false);
     }
   };

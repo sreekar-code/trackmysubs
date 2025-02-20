@@ -22,10 +22,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const isPricingPage = location.pathname === '/pricing';
 
   const handleAnalyticsClick = (e: React.MouseEvent) => {
-    // For free users, redirect to pricing instead of analytics
-    if (access?.subscription_status === 'free') {
+    // For free users (who don't have lifetime access), redirect to pricing
+    if (access?.subscription_status === 'free' && !access.has_lifetime_access) {
       e.preventDefault();
-      navigate('/pricing');
+      navigate('/pricing', { state: { from: '/analytics' } });
     }
   };
 
@@ -82,7 +82,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <span className="ml-1 text-xs text-blue-600">(Premium)</span>
                 )}
               </Link>
-              {showPricing && !isLifetimeUser && (
+              {/* Only show Pricing/Upgrade for trial users */}
+              {trialStatus.isInTrial && (
                 <Link
                   to="/pricing"
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
@@ -91,7 +92,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {trialStatus.isInTrial ? 'Upgrade' : 'Pricing'}
+                  Upgrade
                 </Link>
               )}
             </div>
@@ -145,7 +146,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <span className="ml-1 text-xs text-blue-600">(Premium)</span>
                 )}
               </Link>
-              {showPricing && !isLifetimeUser && (
+              {/* Only show Pricing/Upgrade for trial users */}
+              {trialStatus.isInTrial && (
                 <Link
                   to="/pricing"
                   className={`flex items-center space-x-2 w-full px-4 py-2 text-left ${
@@ -154,7 +156,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       : 'text-gray-700 hover:bg-gray-100'
                   } rounded-lg transition-colors duration-200`}
                 >
-                  <span>{trialStatus.isInTrial ? 'Upgrade' : 'Pricing'}</span>
+                  <span>Upgrade</span>
                 </Link>
               )}
               {trialStatus.isInTrial && (

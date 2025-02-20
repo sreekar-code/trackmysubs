@@ -35,10 +35,16 @@ const AuthCallback: React.FC = () => {
         }
 
         // Exchange the code for a session
+        console.log('Exchanging code for session...');
         const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
         
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          console.error('Session error:', {
+            message: sessionError.message,
+            status: sessionError.status,
+            name: sessionError.name,
+            details: sessionError
+          });
           throw sessionError;
         }
 
@@ -48,6 +54,7 @@ const AuthCallback: React.FC = () => {
         }
 
         // Wait for session to be fully established
+        console.log('Waiting for session to establish...');
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Use the user from the session data returned by exchangeCodeForSession
@@ -57,10 +64,12 @@ const AuthCallback: React.FC = () => {
           throw new Error('User not found');
         }
 
-        console.log('Processing user in callback:', {
+        console.log('User found in session:', {
           id: user.id,
           email: user.email,
-          created_at: user.created_at
+          created_at: user.created_at,
+          app_metadata: user.app_metadata,
+          user_metadata: user.user_metadata
         });
 
         // Function to create user access with retries

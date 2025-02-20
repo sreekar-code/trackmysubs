@@ -138,14 +138,17 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: {
-              created_at: new Date().toISOString()
-            }
+            data: {}
           }
         });
         
         if (signUpError) {
-          console.error('Signup error:', signUpError);
+          console.error('Detailed signup error:', {
+            message: signUpError.message,
+            status: signUpError.status,
+            name: signUpError.name,
+            details: signUpError
+          });
           throw signUpError;
         }
 
@@ -154,7 +157,11 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
           throw new Error('No user data returned from signup');
         }
 
-        console.log('Signup successful, user created:', data.user.id);
+        console.log('Signup successful:', {
+          userId: data.user.id,
+          email: data.user.email,
+          created_at: data.user.created_at
+        });
         
         // Show confirmation message
         setResetSent(true);

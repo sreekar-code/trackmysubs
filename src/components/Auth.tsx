@@ -18,6 +18,102 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
 
+  const createUserAccess = async (user: any, retryCount = 0): Promise<void> => {
+    try {
+      // Check if user access record already exists
+      const { data: existingAccess, error: accessCheckError } = await supabase
+        .from('user_access')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (accessCheckError && accessCheckError.code !== 'PGRST116') {
+        console.error('Error checking existing access:', accessCheckError);
+        throw accessCheckError;
+      }
+
+      // Only create access record if it doesn't exist
+      if (!existingAccess) {
+        console.log('Creating access record for user:', user.id);
+        
+        const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+        const trialStartDate = new Date();
+        const trialEndDate = new Date(trialStartDate);
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+        const accessData = {
+          user_id: user.id,
+          user_type: isExistingUser ? 'existing' : 'new',
+          has_lifetime_access: isExistingUser,
+          subscription_status: isExistingUser ? 'free' : 'trial',
+          trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+          trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // First try direct insert
+        const { error: directInsertError } = await supabase
+          .from('user_access')
+          .insert([accessData])
+          .select()
+          .single();
+
+        if (directInsertError) {
+          console.log('Direct insert failed, trying RPC:', directInsertError);
+          
+          // If direct insert fails, try RPC
+          const { error: rpcError } = await supabase.rpc('create_user_access', {
+            p_user_id: user.id,
+            p_user_type: accessData.user_type,
+            p_has_lifetime_access: accessData.has_lifetime_access,
+            p_subscription_status: accessData.subscription_status,
+            p_trial_start_date: accessData.trial_start_date,
+            p_trial_end_date: accessData.trial_end_date
+          });
+
+          if (rpcError) {
+            console.error('RPC insert failed:', {
+              error: rpcError,
+              message: rpcError.message,
+              code: rpcError.code
+            });
+
+            if (retryCount < 3) {
+              console.log(`Retrying... (attempt ${retryCount + 1})`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+              return createUserAccess(user, retryCount + 1);
+            }
+
+            throw new Error(`Failed to create user access record: ${rpcError.message}`);
+          }
+        }
+
+        // Verify the record was created
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('user_access')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (verifyError || !verifyData) {
+          throw new Error('Failed to verify access record creation');
+        }
+
+        console.log('Access record created and verified:', verifyData);
+      } else {
+        console.log('Access record already exists:', existingAccess);
+      }
+    } catch (error) {
+      if (retryCount < 3) {
+        console.log(`Retrying after error... (attempt ${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return createUserAccess(user, retryCount + 1);
+      }
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -33,37 +129,8 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
         if (signInError) throw signInError;
         if (!user) throw new Error('No user data returned');
 
-        // Check if user has access record
-        const { data: existingAccess } = await supabase
-          .from('user_access')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!existingAccess) {
-          const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
-          const trialStartDate = new Date();
-          const trialEndDate = new Date(trialStartDate);
-          trialEndDate.setDate(trialEndDate.getDate() + 7);
-
-          const { error: insertError } = await supabase
-            .from('user_access')
-            .insert({
-              user_id: user.id,
-              user_type: isExistingUser ? 'existing' : 'new',
-              has_lifetime_access: isExistingUser,
-              subscription_status: isExistingUser ? 'free' : 'trial',
-              trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
-              trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (insertError) {
-            console.error('Error creating user access:', insertError);
-            throw new Error('Failed to create user access record');
-          }
-        }
+        // Try to create user access record if needed
+        await createUserAccess(user);
 
         onSignIn();
         navigate('/dashboard', { replace: true });
@@ -110,8 +177,20 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await signInWithGoogle();
-      if (error) throw error;
+      const { error: signInError } = await signInWithGoogle();
+      if (signInError) throw signInError;
+
+      // Wait for session to be established
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Get user data
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('No user data returned');
+
+      // Try to create user access record if needed
+      await createUserAccess(user);
+
       // Don't navigate here - let the OAuth callback handle it
     } catch (err) {
       console.error('Google auth error:', err);

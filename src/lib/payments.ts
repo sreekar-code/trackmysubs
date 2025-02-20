@@ -57,60 +57,68 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
   }
 };
 
-export const handlePaymentSuccess = async (userId: string): Promise<boolean> => {
+export async function handlePaymentSuccess(userId: string): Promise<boolean> {
   try {
-    const now = new Date();
-    const oneYear = new Date(now.setFullYear(now.getFullYear() + 1));
-
-    // First check if user_access record exists
-    const { data: accessRecord, error: fetchError } = await supabase
+    // First, get the current user access record
+    const { data: accessData, error: accessError } = await supabase
       .from('user_access')
-      .select('id')
+      .select('*')
       .eq('user_id', userId)
       .single();
 
-    if (fetchError) {
-      // If no record exists, create one
-      const { error: insertError } = await supabase
-        .from('user_access')
-        .insert({
+    if (accessError) {
+      console.error('Error fetching user access:', accessError);
+      return false;
+    }
+
+    // Calculate subscription end date (1 year from now)
+    const subscriptionEndDate = new Date();
+    subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 1);
+
+    // Update the user access record
+    const { error: updateError } = await supabase
+      .from('user_access')
+      .update({
+        subscription_status: 'premium',
+        subscription_end_date: subscriptionEndDate.toISOString(),
+        updated_at: new Date().toISOString(),
+        // Clear trial dates if they exist
+        trial_start_date: null,
+        trial_end_date: null
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating user access:', updateError);
+      return false;
+    }
+
+    // Create a payment record
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .insert([
+        {
           user_id: userId,
-          user_type: 'new',
-          has_lifetime_access: false,
-          subscription_status: 'premium',
-          subscription_start_date: new Date().toISOString(),
-          subscription_end_date: oneYear.toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+          amount: 10, // $10 for annual subscription
+          currency: 'USD',
+          status: 'succeeded',
+          payment_date: new Date().toISOString(),
+          subscription_period_start: new Date().toISOString(),
+          subscription_period_end: subscriptionEndDate.toISOString()
+        }
+      ]);
 
-      if (insertError) throw insertError;
-    } else {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('user_access')
-        .update({
-          subscription_status: 'premium',
-          has_lifetime_access: false,
-          subscription_start_date: new Date().toISOString(),
-          subscription_end_date: oneYear.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) throw updateError;
+    if (paymentError) {
+      console.error('Error creating payment record:', paymentError);
+      // Don't return false here as the main update was successful
     }
 
     return true;
   } catch (error) {
-    console.error('Payment success handling error:', {
-      error,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
+    console.error('Payment success handling error:', error);
     return false;
   }
-};
+}
 
 export const handlePaymentCancel = async (userId: string): Promise<boolean> => {
   try {

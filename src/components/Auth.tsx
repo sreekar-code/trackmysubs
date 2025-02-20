@@ -60,7 +60,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
           .insert([accessData]);
 
         if (directInsertError) {
-          console.log('Direct insert failed, trying RPC:', directInsertError);
+          console.error('Direct insert failed:', directInsertError);
           
           // If direct insert fails, try RPC
           const { error: rpcError } = await supabase.rpc('create_user_access', {
@@ -73,21 +73,13 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
           });
 
           if (rpcError) {
-            console.error('RPC insert failed:', {
-              error: rpcError,
-              message: rpcError.message,
-              code: rpcError.code
-            });
-
-            if (retryCount < 3) {
-              console.log(`Retrying... (attempt ${retryCount + 1})`);
-              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-              return createUserAccess(user, retryCount + 1);
-            }
-
-            throw new Error(`Failed to create user access record: ${rpcError.message}`);
+            console.error('RPC insert failed:', rpcError);
+            throw rpcError;
           }
         }
+
+        // Wait a bit before verifying to allow for any potential lag
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Verify the record was created
         const { data: verifyData, error: verifyError } = await supabase
@@ -181,7 +173,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setError(null);
     try {
       // First sign in with Google
-      const { error: signInError } = await signInWithGoogle();
+      const { data: signInData, error: signInError } = await signInWithGoogle();
       if (signInError) throw signInError;
 
       // Wait for session to be established
@@ -206,6 +198,8 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     } catch (err) {
       console.error('Google auth error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');
+      // If there's an error, try to sign out to clean up any partial state
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }

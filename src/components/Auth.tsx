@@ -18,8 +18,10 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
 
-  const createUserAccess = async (user: any, retryCount = 0): Promise<void> => {
+  const createUserAccess = async (user: any, retryCount = 0): Promise<boolean> => {
     try {
+      console.log('Checking/creating access for user:', user.id);
+      
       // Check if user access record already exists
       const { data: existingAccess, error: accessCheckError } = await supabase
         .from('user_access')
@@ -34,7 +36,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
 
       // Only create access record if it doesn't exist
       if (!existingAccess) {
-        console.log('Creating access record for user:', user.id);
+        console.log('No existing access found, creating new record');
         
         const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
         const trialStartDate = new Date();
@@ -55,9 +57,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
         // First try direct insert
         const { error: directInsertError } = await supabase
           .from('user_access')
-          .insert([accessData])
-          .select()
-          .single();
+          .insert([accessData]);
 
         if (directInsertError) {
           console.log('Direct insert failed, trying RPC:', directInsertError);
@@ -101,16 +101,19 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
         }
 
         console.log('Access record created and verified:', verifyData);
+        return true;
       } else {
         console.log('Access record already exists:', existingAccess);
+        return true;
       }
     } catch (error) {
+      console.error('Error in createUserAccess:', error);
       if (retryCount < 3) {
         console.log(`Retrying after error... (attempt ${retryCount + 1})`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
         return createUserAccess(user, retryCount + 1);
       }
-      throw error;
+      return false;
     }
   };
 
@@ -177,6 +180,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setLoading(true);
     setError(null);
     try {
+      // First sign in with Google
       const { error: signInError } = await signInWithGoogle();
       if (signInError) throw signInError;
 
@@ -188,10 +192,17 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
       if (userError) throw userError;
       if (!user) throw new Error('No user data returned');
 
-      // Try to create user access record if needed
-      await createUserAccess(user);
+      console.log('User authenticated:', user.id);
 
-      // Don't navigate here - let the OAuth callback handle it
+      // Try to create user access record if needed
+      const accessCreated = await createUserAccess(user);
+      if (!accessCreated) {
+        throw new Error('Failed to create or verify user access record');
+      }
+
+      // Call onSignIn callback and navigate to dashboard
+      onSignIn();
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Google auth error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');

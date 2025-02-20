@@ -61,94 +61,11 @@ const AuthCallback: React.FC = () => {
           throw new Error('User not found');
         }
 
-        console.log('Processing user:', {
+        console.log('Processing user in callback:', {
           id: user.id,
           email: user.email,
           created_at: user.created_at
         });
-
-        // Function to create user access record
-        const createUserAccess = async (retryCount = 0): Promise<void> => {
-          try {
-            // First try direct insert
-            const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
-            const trialStartDate = new Date();
-            const trialEndDate = new Date(trialStartDate);
-            trialEndDate.setDate(trialEndDate.getDate() + 7);
-
-            const accessData = {
-              user_id: user.id,
-              user_type: isExistingUser ? 'existing' : 'new',
-              has_lifetime_access: isExistingUser,
-              subscription_status: isExistingUser ? 'free' : 'trial',
-              trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
-              trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-
-            console.log('Attempting direct insert of access record:', accessData);
-
-            const { error: directInsertError } = await supabase
-              .from('user_access')
-              .insert([accessData])
-              .select()
-              .single();
-
-            if (directInsertError) {
-              console.log('Direct insert failed, trying RPC:', directInsertError);
-              
-              // If direct insert fails, try RPC
-              const { error: rpcError } = await supabase.rpc('create_user_access', {
-                p_user_id: user.id,
-                p_user_type: accessData.user_type,
-                p_has_lifetime_access: accessData.has_lifetime_access,
-                p_subscription_status: accessData.subscription_status,
-                p_trial_start_date: accessData.trial_start_date,
-                p_trial_end_date: accessData.trial_end_date
-              });
-
-              if (rpcError) {
-                console.error('RPC insert failed:', {
-                  error: rpcError,
-                  message: rpcError.message,
-                  code: rpcError.code
-                });
-
-                // If we haven't retried too many times, wait and try again
-                if (retryCount < 3) {
-                  console.log(`Retrying... (attempt ${retryCount + 1})`);
-                  await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-                  return createUserAccess(retryCount + 1);
-                }
-
-                throw new Error(`Failed to create user access record: ${rpcError.message}`);
-              }
-            }
-
-            console.log('Access record created successfully');
-
-            // Verify the record was created
-            const { data: verifyData, error: verifyError } = await supabase
-              .from('user_access')
-              .select('*')
-              .eq('user_id', user.id)
-              .single();
-
-            if (verifyError || !verifyData) {
-              throw new Error('Failed to verify access record creation');
-            }
-
-            console.log('Access record verified:', verifyData);
-          } catch (error) {
-            if (retryCount < 3) {
-              console.log(`Retrying after error... (attempt ${retryCount + 1})`);
-              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-              return createUserAccess(retryCount + 1);
-            }
-            throw error;
-          }
-        };
 
         // Check if user access record already exists
         const { data: existingAccess, error: accessCheckError } = await supabase
@@ -164,10 +81,62 @@ const AuthCallback: React.FC = () => {
 
         // Create access record if it doesn't exist
         if (!existingAccess) {
-          console.log('No existing access record found, creating new one');
-          await createUserAccess();
+          console.log('Creating new access record in callback');
+          
+          const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+          const trialStartDate = new Date();
+          const trialEndDate = new Date(trialStartDate);
+          trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+          const accessData = {
+            user_id: user.id,
+            user_type: isExistingUser ? 'existing' : 'new',
+            has_lifetime_access: isExistingUser,
+            subscription_status: isExistingUser ? 'free' : 'trial',
+            trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+            trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          // Try direct insert first
+          const { error: insertError } = await supabase
+            .from('user_access')
+            .insert([accessData]);
+
+          if (insertError) {
+            console.log('Direct insert failed in callback, trying RPC');
+            
+            // If direct insert fails, try RPC
+            const { error: rpcError } = await supabase.rpc('create_user_access', {
+              p_user_id: user.id,
+              p_user_type: accessData.user_type,
+              p_has_lifetime_access: accessData.has_lifetime_access,
+              p_subscription_status: accessData.subscription_status,
+              p_trial_start_date: accessData.trial_start_date,
+              p_trial_end_date: accessData.trial_end_date
+            });
+
+            if (rpcError) {
+              console.error('RPC insert failed in callback:', rpcError);
+              throw rpcError;
+            }
+          }
+
+          // Verify the record was created
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('user_access')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (verifyError || !verifyData) {
+            throw new Error('Failed to verify access record creation in callback');
+          }
+
+          console.log('Access record created and verified in callback:', verifyData);
         } else {
-          console.log('Existing access record found:', existingAccess);
+          console.log('Access record already exists in callback:', existingAccess);
         }
 
         // Navigate to dashboard

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, Plus, LogOut, Menu } from 'lucide-react';
-import CurrencySelector from '../CurrencySelector';
+import CurrencySelector from './CurrencySelector';
 
 interface DashboardHeaderProps {
   onAddNew: () => void;
@@ -15,7 +15,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onSignOut,
   showMobileMenu,
   setShowMobileMenu,
-  onManageCategories,
+  onManageCategories
 }) => {
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-10">
@@ -40,7 +40,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <Plus className="h-5 w-5 sm:mr-2" />
               <span className="hidden sm:inline">Add New</span>
             </button>
-<button
+            <button
               onClick={onManageCategories}
               className="inline-flex items-center px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ml-2"
             >

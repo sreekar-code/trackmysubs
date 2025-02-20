@@ -8,6 +8,7 @@ import SubscriptionList from './dashboard/SubscriptionList';
 import SubscriptionModal from './dashboard/SubscriptionModal';
 import CategoryManagement from './dashboard/CategoryManagement';
 import SubscriptionFilters from './dashboard/SubscriptionFilters';
+import TrialStartedNotification from './TrialStartedNotification';
 
 interface Subscription {
   id: string;
@@ -64,6 +65,7 @@ const Dashboard: React.FC = () => {
     category_id: '',
     currency: 'USD'
   });
+  const [showTrialNotification, setShowTrialNotification] = useState(true);
 
   const fetchData = async (retryCount = 0) => {
     console.log('🔄 Fetching data...');
@@ -339,10 +341,15 @@ const Dashboard: React.FC = () => {
       )}
 
       <DashboardHeader
+        onAddNew={() => setShowModal(true)}
         onSignOut={handleSignOut}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
+        onManageCategories={() => setShowCategoryManagement(true)}
       />
+
+      {/* Trial Started Notification */}
+      <TrialStartedNotification onClose={() => setShowTrialNotification(false)} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <DashboardStats subscriptions={subscriptions} />

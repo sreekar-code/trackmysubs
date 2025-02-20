@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useUserAccess } from '../hooks/useUserAccess';
@@ -12,6 +12,13 @@ const Pricing: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+
+  // Redirect lifetime access users back to dashboard
+  useEffect(() => {
+    if (access?.has_lifetime_access) {
+      navigate('/');
+    }
+  }, [access, navigate]);
 
   const handleUpgrade = async () => {
     try {

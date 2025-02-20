@@ -27,7 +27,7 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
         .from('user_access')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (accessCheckError && accessCheckError.code !== 'PGRST116') {
         console.error('Error checking existing access:', accessCheckError);
@@ -78,15 +78,15 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
           }
         }
 
-        // Wait a bit before verifying to allow for any potential lag
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait a bit longer before verifying to allow for DB propagation
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Verify the record was created
+        // Verify the record was created using maybeSingle()
         const { data: verifyData, error: verifyError } = await supabase
           .from('user_access')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (verifyError || !verifyData) {
           throw new Error('Failed to verify access record creation');

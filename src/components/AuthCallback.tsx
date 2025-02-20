@@ -50,14 +50,10 @@ const AuthCallback: React.FC = () => {
         // Wait for session to be fully established
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Get user data
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('Get user error:', userError);
-          throw userError;
-        }
+        // Use the user from the session data returned by exchangeCodeForSession
+        const user = data.session.user;
         if (!user) {
-          console.error('User not found after getting session');
+          console.error('User not found in session');
           throw new Error('User not found');
         }
 
@@ -75,7 +71,7 @@ const AuthCallback: React.FC = () => {
               .from('user_access')
               .select('*')
               .eq('user_id', user.id)
-              .single();
+              .maybeSingle();
 
             if (accessCheckError && accessCheckError.code !== 'PGRST116') {
               console.error('Error checking existing access:', accessCheckError);
@@ -125,15 +121,15 @@ const AuthCallback: React.FC = () => {
                 }
               }
 
-              // Wait a bit before verifying
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Wait a bit longer before verifying to allow for DB propagation
+              await new Promise(resolve => setTimeout(resolve, 2000));
 
-              // Verify the record was created
+              // Verify the record was created using maybeSingle()
               const { data: verifyData, error: verifyError } = await supabase
                 .from('user_access')
                 .select('*')
                 .eq('user_id', user.id)
-                .single();
+                .maybeSingle();
 
               if (verifyError || !verifyData) {
                 throw new Error('Failed to verify access record creation');

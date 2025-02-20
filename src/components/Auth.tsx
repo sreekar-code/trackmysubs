@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { signIn, signUp, resetPassword, signInWithGoogle } from '../lib/auth';
 import { CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 interface AuthProps {
   onSignIn: () => void;
@@ -24,16 +25,70 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
 
     try {
       if (isLogin) {
-        const { user, error: signInError } = await signIn(email, password);
+        const { user, session, error: signInError } = await signIn(email, password);
         if (signInError) throw signInError;
         if (user) {
+          // Check if user has access record
+          const { data: accessData, error: accessError } = await supabase
+            .from('user_access')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (accessError && accessError.code !== 'PGRST116') {
+            throw accessError;
+          }
+
+          // If no access record exists, create one
+          if (!accessData) {
+            const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+            const trialStartDate = new Date();
+            const trialEndDate = new Date(trialStartDate);
+            trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+            const { error: insertError } = await supabase
+              .from('user_access')
+              .insert({
+                user_id: user.id,
+                user_type: isExistingUser ? 'existing' : 'new',
+                has_lifetime_access: isExistingUser,
+                subscription_status: isExistingUser ? 'free' : 'trial',
+                trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+                trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (insertError) throw insertError;
+          }
+
           onSignIn();
           navigate('/dashboard', { replace: true });
         }
       } else {
-        const { user, error: signUpError } = await signUp(email, password);
+        const { user, session, error: signUpError } = await signUp(email, password);
         if (signUpError) throw signUpError;
         if (user) {
+          // Create access record for new user
+          const trialStartDate = new Date();
+          const trialEndDate = new Date(trialStartDate);
+          trialEndDate.setDate(trialEndDate.getDate() + 7);
+
+          const { error: insertError } = await supabase
+            .from('user_access')
+            .insert({
+              user_id: user.id,
+              user_type: 'new',
+              has_lifetime_access: false,
+              subscription_status: 'trial',
+              trial_start_date: trialStartDate.toISOString(),
+              trial_end_date: trialEndDate.toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) throw insertError;
+
           onSignIn();
           navigate('/dashboard', { replace: true });
         }

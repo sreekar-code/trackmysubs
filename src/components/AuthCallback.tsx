@@ -62,8 +62,21 @@ const AuthCallback: React.FC = () => {
           throw accessError;
         }
 
+        // Check user creation date to determine if they're an existing user
+        const { data: userData, error: userError } = await supabase
+          .from('auth.users')
+          .select('created_at')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (userError) {
+          throw userError;
+        }
+
+        const isExistingUser = userData && new Date(userData.created_at) < new Date('2024-02-01');
+
         if (!accessData) {
-          // Create user access record with trial period for new users
+          // Create user access record
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
           trialEndDate.setDate(trialEndDate.getDate() + 7); // 7-day trial
@@ -72,11 +85,11 @@ const AuthCallback: React.FC = () => {
             .from('user_access')
             .insert({
               user_id: data.session.user.id,
-              user_type: 'new',
-              has_lifetime_access: false,
-              subscription_status: 'trial',
-              trial_start_date: trialStartDate.toISOString(),
-              trial_end_date: trialEndDate.toISOString(),
+              user_type: isExistingUser ? 'existing' : 'new',
+              has_lifetime_access: isExistingUser,
+              subscription_status: isExistingUser ? 'free' : 'trial',
+              trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+              trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, LogOut, Menu } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserAccess } from '../../hooks/useUserAccess';
 
 interface DashboardHeaderProps {
@@ -15,10 +15,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   setShowMobileMenu,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { getUserAccessDetails, loading } = useUserAccess();
   const { showPricing, isLifetimeUser, trialStatus, access } = getUserAccessDetails();
   const isAnalyticsPage = location.pathname === '/analytics';
   const isPricingPage = location.pathname === '/pricing';
+
+  const handleAnalyticsClick = (e: React.MouseEvent) => {
+    // For free users, redirect to pricing instead of analytics
+    if (access?.subscription_status === 'free') {
+      e.preventDefault();
+      navigate('/pricing');
+    }
+  };
 
   if (loading) {
     return (
@@ -61,6 +70,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               </Link>
               <Link
                 to="/analytics"
+                onClick={handleAnalyticsClick}
                 className={`px-3 py-2 rounded-lg text-sm font-medium ${
                   isAnalyticsPage
                     ? 'bg-blue-50 text-blue-700'
@@ -68,7 +78,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }`}
               >
                 Analytics
-                {access?.subscription_status === 'free' && (
+                {access?.subscription_status === 'free' && !isLifetimeUser && (
                   <span className="ml-1 text-xs text-blue-600">(Premium)</span>
                 )}
               </Link>
@@ -81,7 +91,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  Pricing
+                  {trialStatus.isInTrial ? 'Upgrade' : 'Pricing'}
                 </Link>
               )}
             </div>
@@ -123,6 +133,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               </Link>
               <Link
                 to="/analytics"
+                onClick={handleAnalyticsClick}
                 className={`flex items-center space-x-2 w-full px-4 py-2 text-left ${
                   isAnalyticsPage
                     ? 'text-blue-700 bg-blue-50'
@@ -130,7 +141,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 } rounded-lg transition-colors duration-200`}
               >
                 <span>Analytics</span>
-                {access?.subscription_status === 'free' && (
+                {access?.subscription_status === 'free' && !isLifetimeUser && (
                   <span className="ml-1 text-xs text-blue-600">(Premium)</span>
                 )}
               </Link>
@@ -143,7 +154,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       : 'text-gray-700 hover:bg-gray-100'
                   } rounded-lg transition-colors duration-200`}
                 >
-                  <span>Pricing</span>
+                  <span>{trialStatus.isInTrial ? 'Upgrade' : 'Pricing'}</span>
                 </Link>
               )}
               {trialStatus.isInTrial && (

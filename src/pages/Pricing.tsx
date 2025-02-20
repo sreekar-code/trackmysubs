@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Check, BarChart2, TrendingUp, PieChart } from 'lucide-react';
 import { useUserAccess } from '../hooks/useUserAccess';
 import { supabase } from '../lib/supabase';
 import { initializePayment } from '../lib/payments';
@@ -8,10 +8,14 @@ import Auth from '../components/Auth';
 
 const Pricing: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { access, loading } = useUserAccess();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  
+  // Check if user was redirected from analytics
+  const isFromAnalytics = location.state?.from === '/analytics';
 
   // Redirect lifetime access users back to dashboard
   useEffect(() => {
@@ -75,19 +79,54 @@ const Pricing: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Plan
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Get access to powerful analytics and insights to better manage your subscriptions.
-          </p>
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+        {isFromAnalytics ? (
+          <div className="text-center mb-16">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Unlock Powerful Analytics
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Get deep insights into your subscription spending with our premium analytics features.
+            </p>
+            <div className="mt-12 grid sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <BarChart2 className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Spending Breakdown</h3>
+                <p className="text-sm text-gray-600">Visualize where your money goes with detailed category-wise analysis</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Spending Trends</h3>
+                <p className="text-sm text-gray-600">Track how your subscription costs evolve over time</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <PieChart className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Smart Insights</h3>
+                <p className="text-sm text-gray-600">Get recommendations to optimize your subscription spending</p>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Choose Your Plan
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Get access to powerful analytics and insights to better manage your subscriptions.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
         <div className="mt-12 max-w-5xl mx-auto grid gap-8 lg:grid-cols-2">
           {/* Free Plan */}
@@ -116,7 +155,7 @@ const Pricing: React.FC = () => {
               onClick={() => navigate('/')}
               className="mt-8 w-full py-3 px-4 rounded-lg text-sm font-semibold text-blue-600 border border-blue-200 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
-              Get Started
+              Current Plan
             </button>
           </div>
 

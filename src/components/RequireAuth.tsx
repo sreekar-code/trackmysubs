@@ -40,19 +40,9 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children, requireAnalytics = 
   if (requireAnalytics) {
     const { showAnalytics, access } = getUserAccessDetails();
     if (!showAnalytics) {
-      // Show upgrade prompt for free users
+      // Redirect free users to pricing page with location state
       if (access?.subscription_status === 'free') {
-        return (
-          <>
-            <UpgradePrompt 
-              isOpen={true} 
-              onClose={() => {
-                setShowUpgradePrompt(false);
-                window.history.back();
-              }} 
-            />
-          </>
-        );
+        return <Navigate to="/pricing" state={{ from: location.pathname }} replace />;
       }
       // Redirect to pricing for other cases (expired trial)
       return <Navigate to="/pricing" replace />;

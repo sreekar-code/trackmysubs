@@ -38,56 +38,88 @@ const AuthCallback: React.FC = () => {
         const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
         
         if (sessionError) {
+          console.error('Session error:', sessionError);
           throw sessionError;
         }
 
         if (!data.session?.user) {
+          console.error('No user data in session');
           throw new Error('No user data in session');
         }
 
+        // Set session explicitly
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+
+        if (setSessionError) {
+          console.error('Set session error:', setSessionError);
+          throw setSessionError;
+        }
+
+        // Wait for session to be set
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Get user data
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) throw new Error('User not found');
+        if (userError) {
+          console.error('Get user error:', userError);
+          throw userError;
+        }
+        if (!user) {
+          console.error('User not found after getting session');
+          throw new Error('User not found');
+        }
 
-        // Wait a short moment to ensure the user is fully created in the database
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('User retrieved successfully:', { id: user.id, email: user.email });
 
         // Check if user access record already exists
         const { data: existingAccess, error: accessError } = await supabase
           .from('user_access')
-          .select('id')
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
         if (accessError && accessError.code !== 'PGRST116') {
+          console.error('Access check error:', accessError);
           throw accessError;
         }
 
         // Only create access record if it doesn't exist
         if (!existingAccess) {
+          console.log('Creating new user access record for:', user.id);
+          
           const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
           const trialStartDate = new Date();
           const trialEndDate = new Date(trialStartDate);
           trialEndDate.setDate(trialEndDate.getDate() + 7);
 
+          const accessData = {
+            user_id: user.id,
+            user_type: isExistingUser ? 'existing' : 'new',
+            has_lifetime_access: isExistingUser,
+            subscription_status: isExistingUser ? 'free' : 'trial',
+            trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+            trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          console.log('Attempting to insert access record:', accessData);
+
           const { error: insertError } = await supabase
             .from('user_access')
-            .insert({
-              user_id: user.id,
-              user_type: isExistingUser ? 'existing' : 'new',
-              has_lifetime_access: isExistingUser,
-              subscription_status: isExistingUser ? 'free' : 'trial',
-              trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
-              trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+            .insert([accessData]);
 
           if (insertError) {
-            console.error('Error creating user access:', insertError);
-            throw new Error('Failed to create user access record');
+            console.error('Insert error:', insertError);
+            throw new Error(`Failed to create user access record: ${insertError.message}`);
           }
+
+          console.log('Access record created successfully');
+        } else {
+          console.log('Access record already exists:', existingAccess);
         }
 
         // Navigate to dashboard

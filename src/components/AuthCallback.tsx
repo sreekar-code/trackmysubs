@@ -45,12 +45,22 @@ const AuthCallback: React.FC = () => {
           throw new Error('No user data in session');
         }
 
+        // Set the session in Supabase
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+
         // Check if this is a new user by looking up their access record
-        const { data: accessData } = await supabase
+        const { data: accessData, error: accessError } = await supabase
           .from('user_access')
           .select('*')
           .eq('user_id', data.session.user.id)
           .single();
+
+        if (accessError && accessError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          throw accessError;
+        }
 
         if (!accessData) {
           // Create user access record with trial period for new users
@@ -58,7 +68,7 @@ const AuthCallback: React.FC = () => {
           const trialEndDate = new Date(trialStartDate);
           trialEndDate.setDate(trialEndDate.getDate() + 7); // 7-day trial
 
-          await supabase
+          const { error: insertError } = await supabase
             .from('user_access')
             .insert({
               user_id: data.session.user.id,
@@ -70,6 +80,10 @@ const AuthCallback: React.FC = () => {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
+
+          if (insertError) {
+            throw insertError;
+          }
         }
 
         // Navigate to dashboard with replace to prevent back button issues

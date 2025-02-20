@@ -61,62 +61,90 @@ const AuthCallback: React.FC = () => {
           throw new Error('User not found');
         }
 
-        console.log('Creating access record for user:', {
+        console.log('Attempting to create access record for user:', {
           id: user.id,
           email: user.email,
           created_at: user.created_at
         });
 
-        // Check if user access record already exists
-        const { data: existingAccess, error: accessCheckError } = await supabase
-          .from('user_access')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+        // Function to create user access record
+        const createUserAccess = async (retryCount = 0): Promise<void> => {
+          try {
+            // Check if user access record already exists
+            const { data: existingAccess, error: accessCheckError } = await supabase
+              .from('user_access')
+              .select('id')
+              .eq('user_id', user.id)
+              .single();
 
-        if (accessCheckError && accessCheckError.code !== 'PGRST116') {
-          console.error('Error checking existing access:', accessCheckError);
-          throw accessCheckError;
-        }
+            if (accessCheckError && accessCheckError.code !== 'PGRST116') {
+              console.error('Error checking existing access:', accessCheckError);
+              throw accessCheckError;
+            }
 
-        // Only create access record if it doesn't exist
-        if (!existingAccess) {
-          const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
-          const trialStartDate = new Date();
-          const trialEndDate = new Date(trialStartDate);
-          trialEndDate.setDate(trialEndDate.getDate() + 7);
+            // Only create access record if it doesn't exist
+            if (!existingAccess) {
+              const isExistingUser = new Date(user.created_at) < new Date('2024-02-01');
+              const trialStartDate = new Date();
+              const trialEndDate = new Date(trialStartDate);
+              trialEndDate.setDate(trialEndDate.getDate() + 7);
 
-          const accessData = {
-            user_id: user.id,
-            user_type: isExistingUser ? 'existing' : 'new',
-            has_lifetime_access: isExistingUser,
-            subscription_status: isExistingUser ? 'free' : 'trial',
-            trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
-            trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
+              const accessData = {
+                user_id: user.id,
+                user_type: isExistingUser ? 'existing' : 'new',
+                has_lifetime_access: isExistingUser,
+                subscription_status: isExistingUser ? 'free' : 'trial',
+                trial_start_date: isExistingUser ? null : trialStartDate.toISOString(),
+                trial_end_date: isExistingUser ? null : trialEndDate.toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
 
-          console.log('Inserting new access record:', accessData);
+              console.log('Inserting new access record:', accessData);
 
-          const { error: insertError } = await supabase
-            .from('user_access')
-            .insert([accessData]);
+              // Try inserting with RPC call
+              const { error: insertError } = await supabase.rpc('create_user_access', {
+                p_user_id: user.id,
+                p_user_type: accessData.user_type,
+                p_has_lifetime_access: accessData.has_lifetime_access,
+                p_subscription_status: accessData.subscription_status,
+                p_trial_start_date: accessData.trial_start_date,
+                p_trial_end_date: accessData.trial_end_date
+              });
 
-          if (insertError) {
-            console.error('Error creating access record:', {
-              error: insertError,
-              code: insertError.code,
-              details: insertError.details,
-              hint: insertError.hint
-            });
-            throw new Error(`Failed to create user access record: ${insertError.message}`);
+              if (insertError) {
+                console.error('Error creating access record:', {
+                  error: insertError,
+                  message: insertError.message,
+                  code: insertError.code
+                });
+
+                // If we haven't retried too many times, wait and try again
+                if (retryCount < 3) {
+                  console.log(`Retrying... (attempt ${retryCount + 1})`);
+                  await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                  return createUserAccess(retryCount + 1);
+                }
+
+                throw new Error(`Failed to create user access record: ${insertError.message}`);
+              }
+
+              console.log('Access record created successfully');
+            } else {
+              console.log('Access record already exists for user');
+            }
+          } catch (error) {
+            if (retryCount < 3) {
+              console.log(`Retrying after error... (attempt ${retryCount + 1})`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+              return createUserAccess(retryCount + 1);
+            }
+            throw error;
           }
+        };
 
-          console.log('Access record created successfully');
-        } else {
-          console.log('Access record already exists for user');
-        }
+        // Try to create user access record with retries
+        await createUserAccess();
 
         // Navigate to dashboard
         navigate('/dashboard', { replace: true });

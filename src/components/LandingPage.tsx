@@ -130,12 +130,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                to="/pricing"
-                className="hidden sm:inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-              >
-                Pricing
-              </Link>
               <button
                 onClick={onLogin}
                 className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
@@ -217,7 +211,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                   <div className="flex items-center justify-between gap-x-4">
                     <h3 className="text-lg font-semibold leading-8 text-gray-900">Free</h3>
                     <p className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold leading-5 text-blue-600">
-                      Get Started
+                      Basic
                     </p>
                   </div>
                   <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-gray-600">
@@ -246,106 +240,64 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
                     </li>
                   </ul>
                 </div>
-                <button
-                  onClick={onGetStarted}
-                  className="mt-6 sm:mt-8 block w-full rounded-lg sm:rounded-xl py-2.5 text-center text-sm font-semibold leading-6 text-blue-600 ring-1 ring-inset ring-blue-200 hover:ring-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-                >
-                  Get Started
-                </button>
               </div>
 
               {/* Premium Plan */}
-              <div className="flex flex-col justify-between rounded-2xl sm:rounded-3xl bg-white p-6 sm:p-8 ring-1 ring-gray-200">
+              <div className="flex flex-col justify-between rounded-2xl sm:rounded-3xl bg-white p-6 sm:p-8 ring-1 ring-gray-200 relative">
+                <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                    Popular
+                  </span>
+                </div>
                 <div>
                   <div className="flex items-center justify-between gap-x-4">
                     <h3 className="text-lg font-semibold leading-8 text-gray-900">Premium</h3>
                     <p className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold leading-5 text-blue-600">
-                      Popular
+                      Pro
                     </p>
                   </div>
                   <p className="mt-4 sm:mt-6 text-sm sm:text-base leading-6 sm:leading-7 text-gray-600">
-                    Everything in Free plus Analytics
+                    Everything you need to analyze your subscriptions
                   </p>
                   <div className="mt-6 sm:mt-8 flex items-baseline gap-x-1">
                     <span className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">$10</span>
                     <span className="text-sm font-semibold leading-6 text-gray-600">/year</span>
                   </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    That's less than $1/month
-                  </p>
+                  <p className="mt-2 text-sm text-gray-500">That's less than $1/month</p>
                   <ul role="list" className="mt-6 sm:mt-8 space-y-2 sm:space-y-3 text-sm leading-6 text-gray-600">
                     <li className="flex gap-x-3 items-center">
                       <Check className="h-5 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      <span>Everything in Free tier</span>
+                      <span>Everything in Free plan</span>
                     </li>
                     <li className="flex gap-x-3 items-center">
                       <Check className="h-5 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      <span>Analytics Dashboard</span>
+                      <span>Advanced analytics dashboard</span>
                     </li>
                     <li className="flex gap-x-3 items-center">
                       <Check className="h-5 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      <span>Spending Trends & Insights</span>
+                      <span>Spending trends & insights</span>
                     </li>
                     <li className="flex gap-x-3 items-center">
                       <Check className="h-5 w-5 flex-none text-blue-600" aria-hidden="true" />
-                      <span>Visual Reports & Charts</span>
+                      <span>Visual reports & charts</span>
                     </li>
                   </ul>
                 </div>
-                <button
-                  onClick={onGetStarted}
-                  className="mt-6 sm:mt-8 block w-full rounded-lg sm:rounded-xl py-2.5 text-center text-sm font-semibold leading-6 text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-                >
-                  Get Started
-                </button>
               </div>
             </div>
           </div>
         </div>
+
+        {showFeedback && <FeedbackBox onClose={handleFeedbackClose} />}
       </main>
 
-      <footer className="bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-          <nav className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <Link to="/blog" className="text-sm text-gray-500 hover:text-gray-900">
-              Blog
-            </Link>
-            <Link to="/terms" className="text-sm text-gray-500 hover:text-gray-900">
-              Terms & Conditions
-            </Link>
-            <Link to="/privacy" className="text-sm text-gray-500 hover:text-gray-900">
-              Privacy Policy
-            </Link>
-            <Link to="/refund" className="text-sm text-gray-500 hover:text-gray-900">
-              Refund Policy
-            </Link>
-            <a 
-              href="mailto:trackmysubs.in@gmail.com" 
-              className="text-sm text-gray-500 hover:text-gray-900"
-            >
-              Support
-            </a>
-            <button
-              onClick={() => setShowFeedback(true)}
-              className="text-sm text-gray-500 hover:text-gray-900"
-            >
-              Feedback
-            </button>
-          </nav>
-          <div className="flex flex-col items-center">
-            <p className="text-center text-xs sm:text-sm text-gray-500">
-              © {currentYear} trackmysubs.in. All rights reserved.
-            </p>
-            <p className="mt-2 text-center text-xs sm:text-sm text-gray-500">
-              Contact us: <a href="mailto:trackmysubs.in@gmail.com" className="text-blue-600 hover:text-blue-800">trackmysubs.in@gmail.com</a>
-            </p>
-          </div>
+      <footer className="bg-white border-t border-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-gray-500">
+            © {currentYear} trackmysubs.in. All rights reserved.
+          </p>
         </div>
       </footer>
-
-      {showFeedback && (
-        <FeedbackBox onClose={handleFeedbackClose} />
-      )}
     </div>
   );
 };

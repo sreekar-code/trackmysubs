@@ -3,15 +3,19 @@ import { CreditCard, LogOut, Menu } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 interface DashboardHeaderProps {
-  onSignOut: () => void;
+  onSignOut: () => Promise<void>;
+  onAddNew: () => void;
   showMobileMenu: boolean;
-  setShowMobileMenu: (show: boolean) => void;
+  setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  onManageCategories: () => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onSignOut,
+  onAddNew,
   showMobileMenu,
   setShowMobileMenu,
+  onManageCategories,
 }) => {
   const location = useLocation();
   const isAnalyticsPage = location.pathname === '/analytics';

@@ -9,27 +9,9 @@ import SubscriptionModal from './dashboard/SubscriptionModal';
 import CategoryManagement from './dashboard/CategoryManagement';
 import SubscriptionFilters from './dashboard/SubscriptionFilters';
 import TrialStartedNotification from './TrialStartedNotification';
-
-interface Subscription {
-  id: string;
-  user_id: string;
-  name: string;
-  price: number;
-  billing_cycle: string;
-  start_date: string;
-  next_billing: string;
-  category_id: string | null;
-  currency: string;
-  category?: {
-    name: string;
-  };
-}
-
-interface Category {
-  id: string;
-  name: string;
-  is_default: boolean;
-}
+import { UserAccessBanner } from './dashboard/UserAccessBanner';
+import { AnalyticsAccessGate } from './dashboard/AnalyticsAccessGate';
+import type { Subscription, Category } from '../types/subscription';
 
 const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
   switch (billingCycle) {
@@ -311,6 +293,55 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const subscriptionData = {
+        ...subscriptionForm,
+        user_id: user.id,
+        price: parseFloat(subscriptionForm.price)
+      };
+
+      if (editingSubscription) {
+        const { error } = await supabase
+          .from('subscriptions')
+          .update(subscriptionData)
+          .eq('id', editingSubscription);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('subscriptions')
+          .insert([subscriptionData]);
+
+        if (error) throw error;
+      }
+
+      setShowModal(false);
+      setEditingSubscription(null);
+      setSubscriptionForm({
+        name: '',
+        price: '',
+        billing_cycle: 'Monthly',
+        start_date: '',
+        next_billing: '',
+        category_id: '',
+        currency: 'USD'
+      });
+      await fetchData();
+    } catch (err) {
+      console.error('Error saving subscription:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save subscription');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -324,22 +355,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {error && (
-        <div className="bg-red-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <X className="h-5 w-5 text-red-400" aria-hidden="true" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <DashboardHeader
         onAddNew={() => setShowModal(true)}
         onSignOut={handleSignOut}
@@ -348,116 +363,85 @@ const Dashboard: React.FC = () => {
         onManageCategories={() => setShowCategoryManagement(true)}
       />
 
-      {/* Trial Started Notification */}
-      <TrialStartedNotification onClose={() => setShowTrialNotification(false)} />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <DashboardStats subscriptions={subscriptions} />
-
-        <div className="mt-4 sm:mt-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <button
-              onClick={() => {
-                setEditingSubscription(null);
-                setSubscriptionForm({
-                  name: '',
-                  price: '',
-                  billing_cycle: 'Monthly',
-                  start_date: '',
-                  next_billing: '',
-                  category_id: '',
-                  currency: 'USD'
-                });
-                setShowModal(true);
-              }}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Add Subscription
-            </button>
-            <button
-              onClick={() => setShowCategoryManagement(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Manage Categories
-            </button>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <UserAccessBanner />
+        
+        {error ? (
+          <div className="bg-red-50 p-4 rounded-md mb-6">
+            <div className="text-sm text-red-700">{error}</div>
           </div>
+        ) : null}
 
-          {subscriptions.length > 0 && (
-            <SubscriptionFilters
-              categories={categories}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedBillingCycle={selectedBillingCycle}
-              setSelectedBillingCycle={setSelectedBillingCycle}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onManageCategories={() => setShowCategoryManagement(true)}
-              showRenewingSoon={showRenewingSoon}
-              setShowRenewingSoon={setShowRenewingSoon}
-              showExpired={showExpired}
-              setShowExpired={setShowExpired}
-            />
-          )}
+        {showTrialNotification && (
+          <TrialStartedNotification onClose={() => setShowTrialNotification(false)} />
+        )}
 
-          {subscriptions.length > 0 ? (
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <SubscriptionList
-                subscriptions={subscriptions}
-                handleEdit={handleEdit}
-                handleDelete={handleDelete}
-                selectedCategory={selectedCategory}
-                selectedBillingCycle={selectedBillingCycle}
-                searchQuery={searchQuery}
-                showRenewingSoon={showRenewingSoon}
-                showExpired={showExpired}
-              />
-            </div>
-          ) : (
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="p-8 text-center">
-                <p className="text-gray-500 mb-4">No subscriptions found</p>
-                <button
-                  onClick={() => {
-                    setEditingSubscription(null);
-                    setSubscriptionForm({
-                      name: '',
-                      price: '',
-                      billing_cycle: 'Monthly',
-                      start_date: '',
-                      next_billing: '',
-                      category_id: '',
-                      currency: 'USD'
-                    });
-                    setShowModal(true);
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Add Your First Subscription
-                </button>
-              </div>
-            </div>
-          )}
+        <AnalyticsAccessGate>
+          <DashboardStats 
+            subscriptions={subscriptions} 
+            calculateMonthlyPrice={calculateMonthlyPrice}
+          />
+        </AnalyticsAccessGate>
+
+        <div className="mt-8">
+          <SubscriptionFilters
+            categories={categories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedBillingCycle={selectedBillingCycle}
+            setSelectedBillingCycle={setSelectedBillingCycle}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            showRenewingSoon={showRenewingSoon}
+            setShowRenewingSoon={setShowRenewingSoon}
+            showExpired={showExpired}
+            setShowExpired={setShowExpired}
+          />
+          
+          <SubscriptionList
+            subscriptions={subscriptions}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            selectedCategory={selectedCategory}
+            selectedBillingCycle={selectedBillingCycle}
+            searchQuery={searchQuery}
+            showRenewingSoon={showRenewingSoon}
+            showExpired={showExpired}
+            calculateMonthlyPrice={calculateMonthlyPrice}
+          />
         </div>
 
         {showModal && (
           <SubscriptionModal
-            showModal={showModal}
-            setShowModal={setShowModal}
-            subscriptionForm={subscriptionForm}
-            setSubscriptionForm={setSubscriptionForm}
-            editingSubscription={editingSubscription}
-            setEditingSubscription={setEditingSubscription}
+            isOpen={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setEditingSubscription(null);
+              setSubscriptionForm({
+                name: '',
+                price: '',
+                billing_cycle: 'Monthly',
+                start_date: '',
+                next_billing: '',
+                category_id: '',
+                currency: 'USD'
+              });
+            }}
+            form={subscriptionForm}
+            setForm={setSubscriptionForm}
             categories={categories}
-            fetchSubscriptions={fetchData}
+            isEditing={!!editingSubscription}
+            onSubmit={handleSubmit}
           />
         )}
 
         {showCategoryManagement && (
           <CategoryManagement
-            showCategoryManagement={showCategoryManagement}
-            setShowCategoryManagement={setShowCategoryManagement}
+            isOpen={showCategoryManagement}
+            onClose={() => setShowCategoryManagement(false)}
             categories={categories}
-            handleDeleteCategory={handleDeleteCategory}
+            onDelete={handleDeleteCategory}
           />
         )}
       </main>

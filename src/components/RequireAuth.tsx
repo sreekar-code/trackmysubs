@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from './LoadingSpinner';
 import { useUserAccess } from '../hooks/useUserAccess';
+import UpgradePrompt from './UpgradePrompt';
 
 interface RequireAuthProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children, requireAnalytics = 
   const location = useLocation();
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { getUserAccessDetails, loading: accessLoading } = useUserAccess();
 
   useEffect(() => {
@@ -36,14 +38,36 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children, requireAnalytics = 
 
   // Check analytics access if required
   if (requireAnalytics) {
-    const { showAnalytics } = getUserAccessDetails();
+    const { showAnalytics, access } = getUserAccessDetails();
     if (!showAnalytics) {
-      // Redirect to pricing if no analytics access
+      // Show upgrade prompt for free users
+      if (access?.subscription_status === 'free') {
+        return (
+          <>
+            <UpgradePrompt 
+              isOpen={true} 
+              onClose={() => {
+                setShowUpgradePrompt(false);
+                window.history.back();
+              }} 
+            />
+          </>
+        );
+      }
+      // Redirect to pricing for other cases (expired trial)
       return <Navigate to="/pricing" replace />;
     }
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <UpgradePrompt 
+        isOpen={showUpgradePrompt} 
+        onClose={() => setShowUpgradePrompt(false)} 
+      />
+    </>
+  );
 };
 
 export default RequireAuth; 

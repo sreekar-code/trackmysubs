@@ -17,6 +17,7 @@ interface UserAccessDetails {
   showPricing: boolean;        // Whether to show pricing options
   showAnalytics: boolean;      // Whether to show analytics option
   isLifetimeUser: boolean;     // Whether user has lifetime access
+  access: UserAccess | null;   // The raw access data
   trialStatus: {
     isInTrial: boolean;
     daysLeft: number;
@@ -146,6 +147,7 @@ export function useUserAccess() {
         showPricing: true,
         showAnalytics: false,
         isLifetimeUser: false,
+        access: null,
         trialStatus: { isInTrial: false, daysLeft: 0 }
       };
     }
@@ -157,6 +159,7 @@ export function useUserAccess() {
         showPricing: false,      // Never show pricing for lifetime users
         showAnalytics: true,     // Always show analytics for lifetime users
         isLifetimeUser: true,
+        access,
         trialStatus: { isInTrial: false, daysLeft: 0 }
       };
     }
@@ -168,6 +171,7 @@ export function useUserAccess() {
         showPricing: false,      // Don't show pricing for premium users
         showAnalytics: true,
         isLifetimeUser: false,
+        access,
         trialStatus: { isInTrial: false, daysLeft: 0 }
       };
     }
@@ -182,6 +186,7 @@ export function useUserAccess() {
         showPricing: true,       // Show pricing during trial
         showAnalytics: trialStatus.isInTrial,
         isLifetimeUser: false,
+        access,
         trialStatus
       };
     }
@@ -190,8 +195,9 @@ export function useUserAccess() {
     return {
       hasFullAccess: false,
       showPricing: true,
-      showAnalytics: false,
+      showAnalytics: true,      // Show analytics option but require upgrade
       isLifetimeUser: false,
+      access,
       trialStatus: { isInTrial: false, daysLeft: 0 }
     };
   };

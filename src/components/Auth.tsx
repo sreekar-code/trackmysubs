@@ -27,13 +27,13 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
         const { user } = await signIn(email, password);
         if (user) {
           onSignIn();
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         const { user } = await signUp(email, password);
         if (user) {
           onSignIn();
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     } catch (err) {
@@ -48,9 +48,9 @@ const Auth: React.FC<AuthProps> = ({ onSignIn }) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await signInWithGoogle();
+      await signInWithGoogle();
       // The OAuth flow will handle the redirect automatically
-      // No need to do anything here as the callback will handle the session
+      // The callback will redirect to /dashboard
     } catch (err) {
       console.error('Google auth error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');

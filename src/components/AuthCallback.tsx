@@ -21,7 +21,7 @@ const AuthCallback: React.FC = () => {
         if (error === 'access_denied' && errorDescription?.includes('expired')) {
           errorMessage = 'The password reset link has expired. Please request a new one.';
         }
-        navigate('/', { 
+        navigate('/login', { 
           replace: true,
           state: { error: errorMessage }
         });
@@ -30,7 +30,7 @@ const AuthCallback: React.FC = () => {
 
       if (!code) {
         console.error('No code parameter found in URL');
-        navigate('/', { 
+        navigate('/login', { 
           replace: true,
           state: { error: 'Invalid authentication link' }
         });
@@ -81,34 +81,29 @@ const AuthCallback: React.FC = () => {
 
             if (accessError) {
               console.error('Error creating user access record:', accessError);
-              // Continue with navigation even if access record creation fails
-              // The user can still use the app, and we can handle the missing record later
             }
           }
 
-          // For normal sign in flow, just navigate to home
-          navigate('/', { replace: true });
+          // For normal sign in flow, navigate to dashboard
+          navigate('/dashboard', { replace: true });
         }
-      } catch (error) {
-        console.error('Error processing authentication:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        navigate('/', {
+      } catch (err) {
+        console.error('Error handling auth callback:', err);
+        navigate('/login', {
           replace: true,
-          state: { 
-            error: `Authentication failed: ${errorMessage}. Please try again.`
-          }
+          state: { error: 'Failed to authenticate. Please try again.' }
         });
       }
     };
 
     handleCallback();
-  }, [navigate, searchParams, location]);
+  }, [navigate, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-violet-50 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Processing your request...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Completing authentication...</p>
       </div>
     </div>
   );

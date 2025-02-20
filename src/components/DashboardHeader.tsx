@@ -19,11 +19,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   setShowMobileMenu,
   onManageCategories
 }) => {
-  const { access } = useUserAccess();
+  const { access, loading } = useUserAccess();
   const navigate = useNavigate();
 
-  // Only show pricing for non-lifetime access users
-  const showPricing = !access?.has_lifetime_access;
+  // Only show pricing for non-lifetime access users and after loading is complete
+  const showPricing = !loading && access && !access.has_lifetime_access;
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-10">

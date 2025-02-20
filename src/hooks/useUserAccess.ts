@@ -85,19 +85,53 @@ export function useUserAccess() {
     // Premium users have access
     if (access.subscription_status === 'premium') return true;
     
-    // Trial users have access during trial period
-    if (access.subscription_status === 'trial' && access.trial_end_date) {
+    // Trial access check
+    if (access.subscription_status === 'trial') {
+      // Must have both start and end dates for trial
+      if (!access.trial_start_date || !access.trial_end_date) {
+        return false;
+      }
+
+      const now = new Date();
       const trialEnd = new Date(access.trial_end_date);
-      return trialEnd > new Date();
+      
+      // Check if trial is still valid
+      if (now > trialEnd) {
+        // Trial has expired
+        return false;
+      }
+      
+      return true;
     }
     
     return false;
+  };
+
+  // Add a helper to check trial status
+  const getTrialStatus = () => {
+    if (!access || access.subscription_status !== 'trial') {
+      return { isInTrial: false, daysLeft: 0 };
+    }
+
+    if (!access.trial_end_date) {
+      return { isInTrial: false, daysLeft: 0 };
+    }
+
+    const now = new Date();
+    const trialEnd = new Date(access.trial_end_date);
+    const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    return {
+      isInTrial: daysLeft > 0,
+      daysLeft
+    };
   };
 
   return {
     access,
     loading,
     error,
-    hasAnalyticsAccess
+    hasAnalyticsAccess,
+    getTrialStatus
   };
 } 

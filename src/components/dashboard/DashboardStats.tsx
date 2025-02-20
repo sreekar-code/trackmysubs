@@ -2,21 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { ListChecks } from 'lucide-react';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { convertCurrency } from '../../utils/currencyConverter';
-import { Subscription } from '../../types/subscription';
 
 interface DashboardStatsProps {
-  subscriptions: Subscription[];
-  calculateMonthlyPrice: (price: number, billingCycle: string) => number;
+  subscriptions: {
+    price: number;
+    billing_cycle: string;
+    currency: string;
+  }[];
 }
 
 const DashboardStats: React.FC<DashboardStatsProps> = ({
-  subscriptions,
-  calculateMonthlyPrice
+  subscriptions
 }) => {
   const { formatAmount, currency, currencies, setCurrency } = useCurrency();
   const currencySymbol = currencies[currency as keyof typeof currencies].symbol;
   const [totalMonthlySpend, setTotalMonthlySpend] = useState<number>(0);
   const [isConverting, setIsConverting] = useState(false);
+
+  const calculateMonthlyPrice = (price: number, billingCycle: string): number => {
+    switch (billingCycle) {
+      case 'Yearly':
+        return price / 12;
+      case 'Quarterly':
+        return price / 3;
+      default:
+        return price;
+    }
+  };
 
   useEffect(() => {
     const calculateTotalSpend = async () => {

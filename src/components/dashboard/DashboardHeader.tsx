@@ -22,11 +22,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const isPricingPage = location.pathname === '/pricing';
 
   const handleAnalyticsClick = (e: React.MouseEvent) => {
-    // For free users (who don't have lifetime access), redirect to pricing
+    // Allow both premium users and lifetime access users to access analytics
     if (access?.subscription_status === 'free' && !access.has_lifetime_access) {
       e.preventDefault();
       navigate('/pricing', { state: { from: '/analytics' } });
     }
+    // Premium users and lifetime access users can proceed to analytics
   };
 
   if (loading) {

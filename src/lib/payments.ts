@@ -14,51 +14,25 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     if (userError) throw userError;
     if (!user) throw new Error('User not found');
 
-    // Create payment session with Dodo Payments
-    const response = await fetch('https://live.dodopayments.com/v1/payment-sessions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
-        'Origin': window.location.origin,
-      },
-      mode: 'cors',
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        product_id: import.meta.env.VITE_DODO_PRODUCT_ID,
-        customer: {
-          email: user.email,
-          name: user.email, // Use email as name if profile doesn't exist
-        },
-        metadata: {
-          userId: user.id,
-          plan: 'premium',
-        },
-        success_url: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${window.location.origin}/payment/cancel`,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
-      console.error('Payment API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      throw new Error(errorData.message || `Payment API error: ${response.status} ${response.statusText}`);
+    // Create payment URL using static payment link format
+    const productId = import.meta.env.VITE_DODO_PRODUCT_ID as string;
+    if (!productId) {
+      throw new Error('Product ID is not configured');
     }
-
-    const session = await response.json();
-
-    // Ensure we have a valid URL before returning
-    if (!session.url) {
-      throw new Error('Payment session created but no URL returned');
-    }
+    const successUrl = `${window.location.origin}/payment/success`;
+    const cancelUrl = `${window.location.origin}/payment/cancel`;
+    
+    // Construct the static payment link with customer details
+    const paymentUrl = `https://checkout.dodopayments.com/buy/${productId}?` + 
+      `quantity=1` +
+      `&redirect_url=${encodeURIComponent(successUrl)}` +
+      `&email=${encodeURIComponent(user.email)}` +
+      `&metadata_userId=${encodeURIComponent(user.id)}` +
+      `&metadata_plan=premium`;
 
     return {
       success: true,
-      paymentUrl: session.url,
+      paymentUrl,
     };
   } catch (error) {
     // Add more detailed error logging

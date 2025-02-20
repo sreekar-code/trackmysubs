@@ -13,33 +13,20 @@ const PaymentSuccess: React.FC = () => {
   useEffect(() => {
     const processPayment = async () => {
       try {
-        const sessionId = searchParams.get('session_id');
-        if (!sessionId) {
-          throw new Error('No session ID found');
+        const paymentId = searchParams.get('payment_id');
+        const status = searchParams.get('status');
+        
+        if (!paymentId || !status) {
+          throw new Error('Missing payment information');
+        }
+
+        if (status !== 'succeeded') {
+          throw new Error('Payment was not successful');
         }
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           throw new Error('User not authenticated');
-        }
-
-        // Verify the payment session with Dodo Payments
-        const response = await fetch(`https://live.dodopayments.com/v1/payment-sessions/${sessionId}`, {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_DODO_PAYMENTS_API_KEY}`,
-            'Origin': window.location.origin,
-          },
-          mode: 'cors',
-          credentials: 'same-origin',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to verify payment session');
-        }
-
-        const session = await response.json();
-        if (session.status !== 'completed') {
-          throw new Error('Payment not completed');
         }
 
         const success = await handlePaymentSuccess(user.id);

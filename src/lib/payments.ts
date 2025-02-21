@@ -71,25 +71,46 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Calculate subscription end date (1 year from now)
-    const subscriptionEndDate = new Date();
-    subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 1);
+    // Calculate subscription dates
+    const now = new Date();
+    const subscriptionEndDate = new Date(now);
+    subscriptionEndDate.setFullYear(now.getFullYear() + 1);
+
+    const updateData = {
+      subscription_status: 'premium' as const,
+      subscription_start_date: now.toISOString(),
+      subscription_end_date: subscriptionEndDate.toISOString(),
+      updated_at: now.toISOString(),
+      // Clear trial dates if they exist
+      trial_start_date: null,
+      trial_end_date: null
+    };
+
+    console.log('Updating user access with data:', {
+      userId,
+      ...updateData
+    });
 
     // Update the user access record
     const { error: updateError } = await supabase
       .from('user_access')
-      .update({
-        subscription_status: 'premium',
-        subscription_end_date: subscriptionEndDate.toISOString(),
-        updated_at: new Date().toISOString(),
-        // Clear trial dates if they exist
-        trial_start_date: null,
-        trial_end_date: null
-      })
+      .update(updateData)
       .eq('user_id', userId);
 
     if (updateError) {
       console.error('Error updating user access:', updateError);
+      return false;
+    }
+
+    // Verify the update
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('user_access')
+      .select('subscription_status')
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !verifyData || verifyData.subscription_status !== 'premium') {
+      console.error('Failed to verify update:', { verifyError, verifyData });
       return false;
     }
 
@@ -102,8 +123,8 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
           amount: 10, // $10 for annual subscription
           currency: 'USD',
           status: 'succeeded',
-          payment_date: new Date().toISOString(),
-          subscription_period_start: new Date().toISOString(),
+          payment_date: now.toISOString(),
+          subscription_period_start: now.toISOString(),
           subscription_period_end: subscriptionEndDate.toISOString()
         }
       ]);
@@ -113,6 +134,7 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
       // Don't return false here as the main update was successful
     }
 
+    console.log('Payment success handled successfully for user:', userId);
     return true;
   } catch (error) {
     console.error('Payment success handling error:', error);

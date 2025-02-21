@@ -13,18 +13,6 @@ const PaymentSuccess: React.FC = () => {
   useEffect(() => {
     const processPayment = async () => {
       try {
-        // Get payment details from URL
-        const paymentId = searchParams.get('payment_id');
-        const status = searchParams.get('status');
-        
-        if (!paymentId || !status) {
-          throw new Error('Missing payment information');
-        }
-
-        if (status !== 'succeeded') {
-          throw new Error('Payment was not successful');
-        }
-
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {

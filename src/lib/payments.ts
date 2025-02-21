@@ -19,16 +19,21 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     if (!productId) {
       throw new Error('Product ID is not configured');
     }
-    const successUrl = `${window.location.origin}/payment/success`;
-    const cancelUrl = `${window.location.origin}/payment/cancel`;
+
+    // Base URLs for success and cancel
+    const baseSuccessUrl = `${window.location.origin}/payment/success`;
+    const baseCancelUrl = `${window.location.origin}/payment/cancel`;
     
     // Construct the static payment link with customer details
     const paymentUrl = `https://checkout.dodopayments.com/buy/${productId}?` + 
       `quantity=1` +
-      `&redirect_url=${encodeURIComponent(successUrl)}` +
-      `&email=${encodeURIComponent(user.email)}` +
-      `&metadata_userId=${encodeURIComponent(user.id)}` +
-      `&metadata_plan=premium`;
+      `&success_url=${encodeURIComponent(baseSuccessUrl)}` +
+      `&cancel_url=${encodeURIComponent(baseCancelUrl)}` +
+      `&email=${encodeURIComponent(user.email || '')}` +
+      `&metadata[userId]=${encodeURIComponent(user.id)}` +
+      `&metadata[subscriptionType]=premium`;
+
+    console.log('Generated payment URL:', paymentUrl);
 
     return {
       success: true,

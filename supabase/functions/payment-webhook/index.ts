@@ -14,12 +14,28 @@ function verifySignature(payload: string, signature: string | null, secret: stri
     console.log('No signature provided')
     return false
   }
+
+  // Log the raw values for debugging
+  console.log('Raw payload:', payload)
+  console.log('Raw signature:', signature)
+  console.log('Secret being used:', secret)
+
+  // Try both raw and base64 encoded signature
   const computedSignature = hmac('sha256', secret, payload, 'utf8', 'hex')
-  console.log('Computed signature:', computedSignature)
-  console.log('Received signature:', signature)
-  const isValid = signature === computedSignature
-  console.log('Signature verification:', isValid ? 'valid' : 'invalid')
-  return isValid
+  const computedSignatureBase64 = hmac('sha256', secret, payload, 'utf8', 'base64')
+  
+  console.log('Computed hex signature:', computedSignature)
+  console.log('Computed base64 signature:', computedSignatureBase64)
+  
+  const isValidHex = signature === computedSignature
+  const isValidBase64 = signature === computedSignatureBase64
+  
+  console.log('Signature verification results:', {
+    hex: isValidHex,
+    base64: isValidBase64
+  })
+  
+  return isValidHex || isValidBase64
 }
 
 serve(async (req) => {
@@ -33,7 +49,8 @@ serve(async (req) => {
     console.log('Received webhook payload:', body)
 
     // Log all headers for debugging
-    console.log('Received headers:', Object.fromEntries(req.headers.entries()))
+    const headers = Object.fromEntries(req.headers.entries())
+    console.log('All received headers:', headers)
 
     // Get and verify the signature
     const signature = req.headers.get('dodo-signature')
@@ -44,6 +61,7 @@ serve(async (req) => {
       console.error('Webhook secret not configured')
       throw new Error('Webhook secret not configured')
     }
+    console.log('Using webhook secret:', webhookSecret)
 
     if (!verifySignature(body, signature, webhookSecret)) {
       console.error('Invalid signature')

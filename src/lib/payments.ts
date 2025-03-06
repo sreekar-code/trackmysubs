@@ -62,7 +62,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
   }
 };
 
-export async function handlePaymentSuccess(userId: string): Promise<boolean> {
+export async function handlePaymentSuccess(userId: string, subscriptionId: string): Promise<boolean> {
   try {
     // First, get the current user access record
     const { data: accessData, error: accessError } = await supabase
@@ -71,7 +71,7 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
       .eq('user_id', userId)
       .single();
 
-    if (accessError) {
+    if (accessError && accessError.code !== 'PGRST116') { // PGRST116 is "not found" error
       console.error('Error fetching user access:', accessError);
       return false;
     }
@@ -86,6 +86,7 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
       subscription_start_date: now.toISOString(),
       subscription_end_date: subscriptionEndDate.toISOString(),
       updated_at: now.toISOString(),
+      subscription_id: subscriptionId,
       // Clear trial dates if they exist
       trial_start_date: null,
       trial_end_date: null
@@ -93,24 +94,27 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
 
     console.log('Updating user access with data:', {
       userId,
+      subscriptionId,
       ...updateData
     });
 
-    // Update the user access record
-    const { error: updateError } = await supabase
+    // Update or insert the user access record
+    const { error: upsertError } = await supabase
       .from('user_access')
-      .update(updateData)
-      .eq('user_id', userId);
+      .upsert({
+        user_id: userId,
+        ...updateData
+      });
 
-    if (updateError) {
-      console.error('Error updating user access:', updateError);
+    if (upsertError) {
+      console.error('Error updating user access:', upsertError);
       return false;
     }
 
     // Verify the update
     const { data: verifyData, error: verifyError } = await supabase
       .from('user_access')
-      .select('subscription_status')
+      .select('subscription_status, subscription_id')
       .eq('user_id', userId)
       .single();
 
@@ -125,6 +129,7 @@ export async function handlePaymentSuccess(userId: string): Promise<boolean> {
       .insert([
         {
           user_id: userId,
+          subscription_id: subscriptionId,
           amount: 10, // $10 for annual subscription
           currency: 'USD',
           status: 'succeeded',

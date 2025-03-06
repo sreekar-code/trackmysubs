@@ -4,38 +4,63 @@ import { hmac } from 'https://deno.land/x/hmac@v2.0.1/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, dodo-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, webhook-signature',
 }
 
 console.log("Payment webhook function started")
 
-function verifySignature(payload: string, signature: string | null, secret: string): boolean {
-  if (!signature) {
-    console.log('No signature provided')
+function verifySignature(payload: string, headers: Headers, secret: string): boolean {
+  const signature = headers.get('webhook-signature')
+  const timestamp = headers.get('webhook-timestamp')
+  const webhookId = headers.get('webhook-id')
+
+  // Log all headers for debugging
+  console.log('All webhook headers:', Object.fromEntries(headers.entries()))
+
+  if (!signature || !timestamp || !webhookId) {
+    console.log('Missing required headers:', { 
+      hasSignature: !!signature,
+      hasTimestamp: !!timestamp,
+      hasWebhookId: !!webhookId,
+      signature,
+      timestamp,
+      webhookId
+    })
+    return false
+  }
+
+  // The signature format is "v1,<signature>"
+  const [version, receivedSignature] = signature.split(',')
+  if (version !== 'v1' || !receivedSignature) {
+    console.log('Invalid signature format:', {
+      fullSignature: signature,
+      version,
+      receivedSignature,
+      expectedVersion: 'v1'
+    })
     return false
   }
 
   // Log the raw values for debugging
-  console.log('Raw payload:', payload)
-  console.log('Raw signature:', signature)
-  console.log('Secret being used:', secret)
+  console.log('Raw values for signature verification:', {
+    payload: payload.substring(0, 100) + '...', // Only log first 100 chars
+    timestamp,
+    webhookId,
+    signatureHeader: signature,
+    secretLength: secret.length
+  })
 
-  // Try both raw and base64 encoded signature
-  const computedSignature = hmac('sha256', secret, payload, 'utf8', 'hex')
-  const computedSignatureBase64 = hmac('sha256', secret, payload, 'utf8', 'base64')
+  // Compute the signature using timestamp and payload
+  const signaturePayload = `${timestamp}.${payload}`
+  const computedSignature = hmac('sha256', secret, signaturePayload, 'utf8', 'base64')
   
-  console.log('Computed hex signature:', computedSignature)
-  console.log('Computed base64 signature:', computedSignatureBase64)
-  
-  const isValidHex = signature === computedSignature
-  const isValidBase64 = signature === computedSignatureBase64
-  
-  console.log('Signature verification results:', {
-    hex: isValidHex,
-    base64: isValidBase64
+  console.log('Signature comparison:', {
+    received: receivedSignature,
+    computed: computedSignature,
+    match: receivedSignature === computedSignature
   })
   
-  return isValidHex || isValidBase64
+  return receivedSignature === computedSignature
 }
 
 serve(async (req) => {
@@ -52,18 +77,13 @@ serve(async (req) => {
     const headers = Object.fromEntries(req.headers.entries())
     console.log('All received headers:', headers)
 
-    // Get and verify the signature
-    const signature = req.headers.get('dodo-signature')
-    console.log('Signature from header:', signature)
-    
     const webhookSecret = Deno.env.get('DODO_WEBHOOK_SECRET')
     if (!webhookSecret) {
       console.error('Webhook secret not configured')
       throw new Error('Webhook secret not configured')
     }
-    console.log('Using webhook secret:', webhookSecret)
 
-    if (!verifySignature(body, signature, webhookSecret)) {
+    if (!verifySignature(body, req.headers, webhookSecret)) {
       console.error('Invalid signature')
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
@@ -78,87 +98,105 @@ serve(async (req) => {
     const event = JSON.parse(body)
     console.log('Processing event:', JSON.stringify(event, null, 2))
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    // Handle subscription events
+    if (event.type === 'subscription.failed') {
+      console.log('Subscription failed:', event.data)
+      
+      // Log the failed event
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials:', { url: !!supabaseUrl, key: !!supabaseKey })
-      throw new Error('Supabase credentials not configured')
-    }
-
-    console.log('Creating Supabase client with URL:', supabaseUrl)
-    const supabaseClient = createClient(supabaseUrl, supabaseKey)
-
-    // Log the event in the database
-    console.log('Storing webhook event in database')
-    const { data: webhookData, error: webhookError } = await supabaseClient
-      .from('payment_webhook_events')
-      .insert({
-        event_type: event.type,
-        event_id: event.id,
-        payment_id: event.data?.id,
-        user_id: event.data?.metadata?.userId,
-        raw_data: event,
-        created_at: new Date().toISOString()
-      })
-      .select()
-
-    if (webhookError) {
-      console.error('Error storing webhook:', webhookError)
-      throw webhookError
-    }
-    console.log('Successfully stored webhook event:', webhookData)
-
-    // Handle successful payment
-    if (event.type === 'payment.succeeded' && event.data?.metadata?.userId) {
-      const userId = event.data.metadata.userId
-      console.log('Processing successful payment for user:', userId)
-
-      // First check if user exists
-      const { data: userData, error: userError } = await supabaseClient
-        .from('user_access')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (userError && userError.code !== 'PGRST116') { // PGRST116 is "not found" error
-        console.error('Error fetching user:', userError)
-        throw userError
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase credentials:', { url: !!supabaseUrl, key: !!supabaseKey })
+        throw new Error('Supabase credentials not configured')
       }
 
-      const subscriptionType = event.data.metadata?.subscriptionType || 'premium'
-      const subscriptionEndDate = subscriptionType === 'lifetime' 
-        ? null  // null indicates lifetime subscription
-        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      const supabaseClient = createClient(supabaseUrl, supabaseKey)
+      
+      // Log the webhook event
+      const { error: webhookError } = await supabaseClient
+        .from('payment_webhook_events')
+        .insert({
+          event_type: event.type,
+          event_id: headers['webhook-id'],
+          payment_id: event.data.subscription_id,
+          user_id: event.data.metadata?.userId,
+          raw_data: event,
+          created_at: new Date().toISOString()
+        })
+
+      if (webhookError) {
+        console.error('Error storing failed webhook:', webhookError)
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      })
+    }
+
+    if (event.type === 'subscription.active' && event.data?.metadata?.userId) {
+      const userId = event.data.metadata.userId
+      const subscriptionId = event.data.subscription_id
+      console.log('Processing subscription for user:', userId, 'subscription:', subscriptionId)
+
+      // Create Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase credentials:', { url: !!supabaseUrl, key: !!supabaseKey })
+        throw new Error('Supabase credentials not configured')
+      }
+
+      const supabaseClient = createClient(supabaseUrl, supabaseKey)
+
+      // Calculate subscription dates
+      const now = new Date()
+      const trialEndDate = event.data.trial_period_days 
+        ? new Date(now.getTime() + event.data.trial_period_days * 24 * 60 * 60 * 1000)
+        : null
 
       // Update or insert user access
       const accessData = {
         user_id: userId,
-        subscription_status: subscriptionType,
-        subscription_start_date: new Date().toISOString(),
-        subscription_end_date: subscriptionEndDate,
-        updated_at: new Date().toISOString()
+        subscription_id: subscriptionId,
+        subscription_status: 'premium',
+        subscription_start_date: event.data.created_at,
+        subscription_end_date: event.data.next_billing_date,
+        trial_start_date: event.data.created_at,
+        trial_end_date: trialEndDate?.toISOString(),
+        updated_at: now.toISOString()
       }
 
       console.log('Updating user access with data:', accessData)
-      const { data: accessData2, error: accessError } = userData
-        ? await supabaseClient
-            .from('user_access')
-            .update(accessData)
-            .eq('user_id', userId)
-            .select()
-        : await supabaseClient
-            .from('user_access')
-            .insert(accessData)
-            .select()
+      const { error: accessError } = await supabaseClient
+        .from('user_access')
+        .upsert(accessData)
 
       if (accessError) {
         console.error('Error updating user access:', accessError)
         throw accessError
       }
 
-      console.log('Successfully updated user access:', accessData2)
+      // Log the webhook event
+      const { error: webhookError } = await supabaseClient
+        .from('payment_webhook_events')
+        .insert({
+          event_type: event.type,
+          event_id: headers['webhook-id'],
+          payment_id: event.data.subscription_id,
+          user_id: userId,
+          raw_data: event,
+          created_at: now.toISOString()
+        })
+
+      if (webhookError) {
+        console.error('Error storing webhook:', webhookError)
+        // Don't throw here as the main operation succeeded
+      }
+
+      console.log('Successfully processed subscription event')
     }
 
     return new Response(JSON.stringify({ success: true }), {

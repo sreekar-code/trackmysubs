@@ -13,16 +13,28 @@ const PaymentSuccess: React.FC = () => {
   useEffect(() => {
     const processPayment = async () => {
       try {
+        // Get payment details from URL
+        const subscriptionId = searchParams.get('subscription_id');
+        const status = searchParams.get('status');
+        
+        if (!subscriptionId || !status) {
+          throw new Error('Missing subscription information');
+        }
+
+        if (status !== 'active') {
+          throw new Error('Subscription is not active');
+        }
+
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           throw new Error('User not authenticated');
         }
 
-        console.log('Processing payment for user:', user.id);
+        console.log('Processing payment for user:', user.id, 'subscription:', subscriptionId);
 
         // Handle payment success
-        const success = await handlePaymentSuccess(user.id);
+        const success = await handlePaymentSuccess(user.id, subscriptionId);
         if (!success) {
           throw new Error('Failed to process payment');
         }
@@ -34,8 +46,13 @@ const PaymentSuccess: React.FC = () => {
           .eq('user_id', user.id)
           .single();
 
-        if (accessError || !accessData) {
+        if (accessError) {
+          console.error('Access verification error:', accessError);
           throw new Error('Failed to verify access update');
+        }
+
+        if (!accessData) {
+          throw new Error('No access data found');
         }
 
         if (accessData.subscription_status !== 'premium') {

@@ -25,7 +25,7 @@ export const initializePayment = async (userId: string): Promise<PaymentResponse
     const baseCancelUrl = `${window.location.origin}/payment/cancel`;
     
     // Construct the static payment link with customer details
-    const paymentUrl = `https://checkout.dodopayments.com/buy/${productId}?` + 
+    const paymentUrl = `https://test.checkout.dodopayments.com/buy/${productId}?` + 
       `quantity=1` +
       `&success_url=${encodeURIComponent(baseSuccessUrl)}` +
       `&cancel_url=${encodeURIComponent(baseCancelUrl)}` +
